@@ -1,0 +1,554 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "superadmin@branchiq.com",
+      "password": "123456",
+      "name": "Super Admin",
+      "role": "superAdmin",
+      "region": "All",
+      "status": "Active",
+      "branchId": null,
+      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+    },
+    {
+      "id": "2",
+      "email": "branchadmin@branchiq.com",
+      "password": "123456",
+      "name": "Branch Admin",
+      "role": "branchAdmin",
+      "branchId": "b1",
+      "region": "Marmara",
+      "status": "Active",
+      "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150"
+    },
+    {
+      "id": "3",
+      "email": "operation@branchiq.com",
+      "password": "123456",
+      "name": "Operation Admin",
+      "role": "operationAdmin",
+      "branchId": "b1",
+      "region": "Marmara",
+      "status": "Active",
+      "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150"
+    }
+  ],
+  "branches": [
+    {
+      "id": "b1",
+      "name": "BranchIQ Kadikoy",
+      "city": "Istanbul",
+      "region": "Marmara",
+      "manager": "Merve Demir",
+      "status": "Active",
+      "address": "Moda Cd. No:45, Kadikoy",
+      "revenueThisMonth": 245000,
+      "dailyOrders": 182,
+      "rating": 4.8,
+      "tableCount": 24,
+      "phone": "+90 216 555 1234"
+    },
+    {
+      "id": "b2",
+      "name": "BranchIQ Besiktas",
+      "city": "Istanbul",
+      "region": "Marmara",
+      "manager": "Ahmet Yilmaz",
+      "status": "Active",
+      "address": "Sair Nedim Cd. No:12, Besiktas",
+      "revenueThisMonth": 310000,
+      "dailyOrders": 210,
+      "rating": 4.7,
+      "tableCount": 30,
+      "phone": "+90 212 444 5678"
+    },
+    {
+      "id": "b3",
+      "name": "BranchIQ Cankaya",
+      "city": "Ankara",
+      "region": "Central Anatolia",
+      "manager": "Bulent Ecevit",
+      "status": "Active",
+      "address": "Tunali Hilmi Cd. No:98, Cankaya",
+      "revenueThisMonth": 185000,
+      "dailyOrders": 145,
+      "rating": 4.5,
+      "tableCount": 20,
+      "phone": "+90 312 333 4567"
+    },
+    {
+      "id": "b4",
+      "name": "BranchIQ Bornova",
+      "city": "Izmir",
+      "region": "Aegean",
+      "manager": "Ceren Sari",
+      "status": "Inactive",
+      "address": "Kucuk Park 128 Sk. No:4, Bornova",
+      "revenueThisMonth": 120000,
+      "dailyOrders": 95,
+      "rating": 4.3,
+      "tableCount": 16,
+      "phone": "+90 232 222 7890"
+    }
+  ],
+  "menuItems": [
+    {
+      "id": "m1",
+      "name": "Truffle Burger",
+      "category": "Main Course",
+      "price": 280,
+      "cost": 95,
+      "status": "Active",
+      "stockStatus": "In Stock",
+      "popular": true,
+      "description": "Double beef patty, truffle mayo, caramelized onions, cheddar, brioche bun",
+      "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
+    },
+    {
+      "id": "m2",
+      "name": "Crispy Chicken Bao",
+      "category": "Starters",
+      "price": 190,
+      "cost": 60,
+      "status": "Active",
+      "stockStatus": "In Stock",
+      "popular": true,
+      "description": "Steamed bao buns, crispy fried chicken, pickled cucumbers, spicy mayo",
+      "image": "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400"
+    },
+    {
+      "id": "m3",
+      "name": "Quinoa Avocado Salad",
+      "category": "Salads",
+      "price": 210,
+      "cost": 55,
+      "status": "Active",
+      "stockStatus": "In Stock",
+      "popular": false,
+      "description": "Organic quinoa, fresh avocado, cherry tomatoes, baby spinach, citrus dressing",
+      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"
+    },
+    {
+      "id": "m4",
+      "name": "Fettuccine Alfredo",
+      "category": "Main Course",
+      "price": 260,
+      "cost": 80,
+      "status": "Active",
+      "stockStatus": "In Stock",
+      "popular": false,
+      "description": "Homemade fettuccine, creamy parmesan sauce, grilled chicken breast, mushrooms",
+      "image": "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=400"
+    },
+    {
+      "id": "m5",
+      "name": "San Sebastian Cheesecake",
+      "category": "Desserts",
+      "price": 160,
+      "cost": 45,
+      "status": "Active",
+      "stockStatus": "In Stock",
+      "popular": true,
+      "description": "Burnt Basque cheesecake with premium Belgian milk chocolate sauce",
+      "image": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400"
+    },
+    {
+      "id": "m6",
+      "name": "Matcha Latte",
+      "category": "Beverages",
+      "price": 95,
+      "cost": 25,
+      "status": "Active",
+      "stockStatus": "Out of Stock",
+      "popular": false,
+      "description": "Ceremonial grade Japanese matcha with warm oat milk",
+      "image": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1001",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 2, "price": 280 }
+      ],
+      "totalAmount": 560,
+      "status": "Completed",
+      "customerName": "John Doe",
+      "type": "Dine-In",
+      "date": "2026-07-03",
+      "time": "12:15"
+    },
+    {
+      "id": "ord-1002",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m2", "name": "Crispy Chicken Bao", "quantity": 1, "price": 190 },
+        { "menuItemId": "m5", "name": "San Sebastian Cheesecake", "quantity": 1, "price": 160 }
+      ],
+      "totalAmount": 350,
+      "status": "Preparing",
+      "customerName": "Jane Smith",
+      "type": "Takeaway",
+      "date": "2026-07-03",
+      "time": "12:35"
+    },
+    {
+      "id": "ord-1003",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m3", "name": "Quinoa Avocado Salad", "quantity": 1, "price": 210 }
+      ],
+      "totalAmount": 210,
+      "status": "Completed",
+      "customerName": "Alice Cooper",
+      "type": "Delivery",
+      "date": "2026-07-03",
+      "time": "12:45"
+    },
+    {
+      "id": "ord-1004",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 1, "price": 280 },
+        { "menuItemId": "m4", "name": "Fettuccine Alfredo", "quantity": 2, "price": 260 }
+      ],
+      "totalAmount": 800,
+      "status": "Pending",
+      "customerName": "Bob Ross",
+      "type": "Dine-In",
+      "date": "2026-07-04",
+      "time": "19:30"
+    },
+    {
+      "id": "ord-1005",
+      "branchId": "b2",
+      "branchName": "BranchIQ Besiktas",
+      "items": [
+        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 3, "price": 280 },
+        { "menuItemId": "m6", "name": "Matcha Latte", "quantity": 3, "price": 95 }
+      ],
+      "totalAmount": 1125,
+      "status": "Completed",
+      "customerName": "Demet Akalin",
+      "type": "Dine-In",
+      "date": "2026-07-03",
+      "time": "20:00"
+    },
+    {
+      "id": "ord-1006",
+      "branchId": "b2",
+      "branchName": "BranchIQ Besiktas",
+      "items": [
+        { "menuItemId": "m4", "name": "Fettuccine Alfredo", "quantity": 1, "price": 260 }
+      ],
+      "totalAmount": 260,
+      "status": "Preparing",
+      "customerName": "Tarkan Tevetoglu",
+      "type": "Takeaway",
+      "date": "2026-07-04",
+      "time": "13:10"
+    },
+    {
+      "id": "ord-1007",
+      "branchId": "b3",
+      "branchName": "BranchIQ Cankaya",
+      "items": [
+        { "menuItemId": "m5", "name": "San Sebastian Cheesecake", "quantity": 2, "price": 160 }
+      ],
+      "totalAmount": 320,
+      "status": "Completed",
+      "customerName": "Ali Kemal",
+      "type": "Dine-In",
+      "date": "2026-07-02",
+      "time": "15:40"
+    },
+    {
+      "id": "ord-1008",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m2", "name": "Crispy Chicken Bao", "quantity": 2, "price": 190 }
+      ],
+      "totalAmount": 380,
+      "status": "Preparing",
+      "customerName": "Fatma Girik",
+      "type": "Dine-In",
+      "date": "2026-07-04",
+      "time": "20:10"
+    },
+    {
+      "id": "ord-1009",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 1, "price": 280 }
+      ],
+      "totalAmount": 280,
+      "status": "Ready",
+      "customerName": "Kemal Sunal",
+      "type": "Takeaway",
+      "date": "2026-07-04",
+      "time": "20:30"
+    }
+  ],
+  "staff": [
+    {
+      "id": "s1",
+      "name": "Sinem Kaya",
+      "role": "Super Admin",
+      "branchId": "All",
+      "branchName": "HQ",
+      "salary": 95000,
+      "rating": 4.9,
+      "shift": "Flexible",
+      "phone": "+90 555 111 2233",
+      "email": "sinem@branchiq.com",
+      "status": "Active"
+    },
+    {
+      "id": "s2",
+      "name": "Merve Demir",
+      "role": "Branch Manager",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "salary": 65000,
+      "rating": 4.8,
+      "shift": "Day",
+      "phone": "+90 555 222 3344",
+      "email": "merve@branchiq.com",
+      "status": "Active"
+    },
+    {
+      "id": "s3",
+      "name": "Hale Yilmaz",
+      "role": "Regional Manager",
+      "branchId": "All",
+      "branchName": "Marmara HQ",
+      "salary": 80000,
+      "rating": 4.9,
+      "shift": "Day",
+      "phone": "+90 555 333 4455",
+      "email": "hale@branchiq.com",
+      "status": "Active"
+    },
+    {
+      "id": "s4",
+      "name": "Aslinur Celik",
+      "role": "Super Admin",
+      "branchId": "All",
+      "branchName": "HQ",
+      "salary": 95000,
+      "rating": 4.9,
+      "shift": "Flexible",
+      "phone": "+90 555 444 5566",
+      "email": "aslinur@branchiq.com",
+      "status": "Active"
+    },
+    {
+      "id": "s5",
+      "name": "Can Oz",
+      "role": "Head Chef",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "salary": 45000,
+      "rating": 4.7,
+      "shift": "Evening",
+      "phone": "+90 555 666 7788",
+      "email": "can.oz@branchiq.com",
+      "status": "Active"
+    },
+    {
+      "id": "s6",
+      "name": "Elif Aksu",
+      "role": "Waiter",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "salary": 28000,
+      "rating": 4.6,
+      "shift": "Day",
+      "phone": "+90 555 777 8899",
+      "email": "elif.aksu@branchiq.com",
+      "status": "Active"
+    }
+  ],
+  "announcements": [
+    {
+      "id": "a1",
+      "title": "Summer Menu Launch",
+      "content": "Our new summer menu items will launch across all branches starting next Monday. Make sure all staff are trained on the ingredients.",
+      "type": "info",
+      "date": "2026-07-03",
+      "sender": "Sinem Kaya (Super Admin)"
+    },
+    {
+      "id": "a2",
+      "title": "Kadikoy Hygeine Inspection Score",
+      "content": "Congratulations to Merve Demir and her team for scoring 99/100 on the latest health and hygiene audit!",
+      "type": "success",
+      "date": "2026-07-02",
+      "sender": "Hale Yilmaz (Regional Manager)"
+    },
+    {
+      "id": "a3",
+      "title": "Vat Rate Update System Maintenance",
+      "content": "The system will undergo brief scheduled maintenance tonight at 2 AM to update local VAT regulations.",
+      "type": "warning",
+      "date": "2026-07-01",
+      "sender": "Aslinur Celik (Super Admin)"
+    }
+  ],
+  "inventory": [
+    {
+      "id": "inv-1",
+      "name": "Coffee Beans (Arabica)",
+      "quantity": 8,
+      "unit": "kg",
+      "minLimit": 15,
+      "branchName": "BranchIQ Kadikoy",
+      "branchId": "b1",
+      "supplier": "Global Bean Distributors"
+    },
+    {
+      "id": "inv-2",
+      "name": "Fresh Milk",
+      "quantity": 45,
+      "unit": "liters",
+      "minLimit": 20,
+      "branchName": "BranchIQ Kadikoy",
+      "branchId": "b1",
+      "supplier": "Daily Dairy Farm"
+    },
+    {
+      "id": "inv-3",
+      "name": "Beef Patties (150g)",
+      "quantity": 120,
+      "unit": "pcs",
+      "minLimit": 50,
+      "branchName": "BranchIQ Kadikoy",
+      "branchId": "b1",
+      "supplier": "Prime Meats Co."
+    },
+    {
+      "id": "inv-4",
+      "name": "Brioche Buns",
+      "quantity": 18,
+      "unit": "pcs",
+      "minLimit": 60,
+      "branchName": "BranchIQ Kadikoy",
+      "branchId": "b1",
+      "supplier": "Artisan Bakery"
+    },
+    {
+      "id": "inv-5",
+      "name": "Cheddar Cheese Slice",
+      "quantity": 300,
+      "unit": "pcs",
+      "minLimit": 100,
+      "branchName": "BranchIQ Besiktas",
+      "branchId": "b2",
+      "supplier": "Daily Dairy Farm"
+    }
+  ],
+  "reservations": [
+    {
+      "id": "res-101",
+      "customerName": "Ahmet Yilmaz",
+      "guests": 4,
+      "date": "2026-07-04",
+      "time": "19:30",
+      "tableNumber": "Table 1",
+      "phone": "+90 532 999 8877",
+      "status": "Confirmed",
+      "branchId": "b1"
+    },
+    {
+      "id": "res-102",
+      "customerName": "Selma Demir",
+      "guests": 2,
+      "date": "2026-07-04",
+      "time": "20:00",
+      "tableNumber": "Table 2",
+      "phone": "+90 533 111 2233",
+      "status": "Arrived",
+      "branchId": "b1"
+    },
+    {
+      "id": "res-103",
+      "customerName": "Caner Kaya",
+      "guests": 6,
+      "date": "2026-07-04",
+      "time": "21:00",
+      "tableNumber": "Table 3",
+      "phone": "+90 505 444 5566",
+      "status": "Confirmed",
+      "branchId": "b1"
+    }
+  ],
+  "tables": [
+    {
+      "id": "t-1",
+      "name": "Table 1",
+      "capacity": 4,
+      "status": "available",
+      "section": "Main Hall",
+      "branchId": "b1"
+    },
+    {
+      "id": "t-2",
+      "name": "Table 2",
+      "capacity": 2,
+      "status": "occupied",
+      "section": "Main Hall",
+      "branchId": "b1",
+      "currentOrderId": "ord-1002"
+    },
+    {
+      "id": "t-3",
+      "name": "Table 3",
+      "capacity": 6,
+      "status": "reserved",
+      "section": "VIP Saloon",
+      "branchId": "b1"
+    },
+    {
+      "id": "t-4",
+      "name": "Table 4",
+      "capacity": 4,
+      "status": "cleaning",
+      "section": "Garden Patio",
+      "branchId": "b1"
+    },
+    {
+      "id": "t-5",
+      "name": "Table 5",
+      "capacity": 4,
+      "status": "available",
+      "section": "Garden Patio",
+      "branchId": "b1"
+    },
+    {
+      "id": "t-6",
+      "name": "Table 6",
+      "capacity": 8,
+      "status": "available",
+      "section": "VIP Saloon",
+      "branchId": "b2"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "camp-1",
+      "title": "Summer Happy Hour",
+      "discount": "20%",
+      "status": "Active",
+      "branchId": "b1"
+    }
+  ],
+  "reports": []
+}

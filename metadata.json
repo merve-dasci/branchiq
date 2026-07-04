@@ -1,0 +1,6 @@
+{
+  "name": "BranchIQ",
+  "description": "Enterprise Restaurant Chain Management Platform by SMAH Technologies",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
