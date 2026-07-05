@@ -6,10 +6,7 @@ import {
   Plus, 
   Trash2, 
   Users, 
-  CheckCircle, 
-  XCircle, 
-  CircleDot,
-  Edit2,
+  Edit2, 
   X
 } from 'lucide-react';
 // Redux masa yükleme, ekleme ve güncelleme eylemlerini import et
@@ -22,11 +19,14 @@ import {
 } from '../../features/tables/tablesSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Şube Yöneticisi Masa Yerleşimi Yönetim Sayfası
 export default function TableManagement({ currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
   // Redux store'dan masaları al
   const { items, loading, error } = useSelector((state) => state.tables);
 
@@ -91,16 +91,25 @@ export default function TableManagement({ currentUser }) {
     e.preventDefault();
     if (editingTable) {
       dispatch(updateTable({ id: editingTable.id, ...formData }));
+      showToast(language === 'tr' ? 'Masa başarıyla güncellendi!' : 'Table updated successfully!', 'success');
     } else {
       dispatch(addTable(formData));
+      showToast(language === 'tr' ? 'Masa başarıyla eklendi!' : 'Table added successfully!', 'success');
     }
     handleCloseModal();
   };
 
   // Masayı Salon Düzeninden Kaldır
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu masa konfigürasyonunu salon düzeninden kaldırmak istiyor musunuz?' : 'Remove this table layout configuration?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Masayı Kaldır' : 'Remove Table',
+      message: language === 'tr' ? 'Bu masa konfigürasyonunu salon düzeninden kaldırmak istiyor musunuz?' : 'Remove this table layout configuration?',
+      confirmText: language === 'tr' ? 'Masayı Kaldır' : 'Remove',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteTable(id));
+      showToast(language === 'tr' ? 'Masa düzeninden başarıyla kaldırıldı!' : 'Table removed successfully!', 'success');
     }
   };
 
@@ -132,23 +141,23 @@ export default function TableManagement({ currentUser }) {
 
       {/* Masa Kapasite Sayaç Kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('total_seating_slots')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">{myBranchTables.length}</h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
           <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{t('available_tables')}</p>
           <h4 className="text-2xl font-black text-emerald-600 mt-1">
             {myBranchTables.filter(t => t.status === 'Available').length}
           </h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
           <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{t('occupied_tables')}</p>
           <h4 className="text-2xl font-black text-rose-600 mt-1">
             {myBranchTables.filter(t => t.status === 'Occupied').length}
           </h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('consolidated_seating_cap')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">
             {myBranchTables.reduce((sum, t) => sum + (t.capacity || 0), 0)} {language === 'tr' ? 'koltuk' : 'seats'}
@@ -161,11 +170,6 @@ export default function TableManagement({ currentUser }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
           {myBranchTables.map(table => {
             const isOccupied = table.status === 'Occupied';
-            const tableStatusTranslation = table.status === 'Available' ? (language === 'tr' ? 'Boş / Müsait' : 'Available') :
-                                           table.status === 'Occupied' ? (language === 'tr' ? 'Dolu' : 'Occupied') :
-                                           table.status === 'Reserved' ? (language === 'tr' ? 'Rezervli' : 'Reserved') :
-                                           (language === 'tr' ? 'Temizlikte' : 'Cleaning');
-
             const sectionTranslation = table.section === 'Main Hall' ? (language === 'tr' ? 'Ana Salon' : 'Main Hall') :
                                        table.section === 'Garden Patio' ? (language === 'tr' ? 'Bahçe / Veranda' : 'Garden Patio') :
                                        table.section === 'VIP Saloon' ? (language === 'tr' ? 'VIP Salon' : 'VIP Saloon') :
@@ -229,7 +233,7 @@ export default function TableManagement({ currentUser }) {
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center">
           <Layers size={48} className="mx-auto text-slate-300 mb-4" />
-          <h4 className="text-slate-800 font-bold">{t('no_seating_slots')} || 'No Seating Slots Found'</h4>
+          <h4 className="text-slate-800 font-bold">{t('no_seating_slots') || 'No Seating Slots Found'}</h4>
           <p className="text-xs text-slate-400 mt-1">{t('deploy_first_table')}</p>
         </div>
       )}

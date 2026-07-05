@@ -164,6 +164,14 @@
       "popular": false,
       "description": "Ceremonial grade Japanese matcha with warm oat milk",
       "image": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400"
+    },
+    {
+      "id": "m7",
+      "name": "makarna",
+      "price": 50,
+      "category": "Main Dish",
+      "description": "jdjdcj",
+      "isAvailable": true
     }
   ],
   "orders": [
@@ -205,7 +213,7 @@
         }
       ],
       "totalAmount": 350,
-      "status": "Preparing",
+      "status": "Ready",
       "customerName": "Jane Smith",
       "type": "Takeaway",
       "date": "2026-07-03",
@@ -405,7 +413,7 @@
     },
     {
       "id": "s3",
-      "name": "Hale Yilmaz",
+      "name": "Hale Alacan",
       "role": "Regional Manager",
       "branchId": "All",
       "branchName": "Marmara HQ",
@@ -471,7 +479,7 @@
       "content": "Congratulations to Merve Demir and her team for scoring 99/100 on the latest health and hygiene audit!",
       "type": "success",
       "date": "2026-07-02",
-      "sender": "Hale Yilmaz (Regional Manager)"
+      "sender": "Hale Alacan (Regional Manager)"
     },
     {
       "id": "a3",

@@ -19,11 +19,14 @@ import { useDispatch } from 'react-redux';
 import { addStaff, updateStaff, deleteStaff } from '../../features/employees/employeesSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Süper Admin ve Bölge Yöneticisi Çalışan Kadrosu Yönetim Paneli
 export default function Employees({ staff, branches, selectedRegion, currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
 
   // Arama filtresi, unvan filtresi ve şube filtresi durum yönetimi
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,16 +123,25 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
 
     if (editingMember) {
       dispatch(updateStaff({ id: editingMember.id, ...postData }));
+      showToast('Staff member updated successfully!', 'success');
     } else {
       dispatch(addStaff(postData));
+      showToast('Staff member onboarded successfully!', 'success');
     }
     handleCloseModal();
   };
 
   // Çalışan Kaydını Sil (İşten Çıkar)
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu çalışanı kurumsal çalışan veri tabanından silmek istediğinize emin misiniz?' : 'Are you sure you want to dismiss this member from the staff database?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Çalışanı İşten Çıkar' : 'Dismiss Staff Member',
+      message: language === 'tr' ? 'Bu çalışanı kurumsal çalışan veri tabanından silmek istediğinize emin misiniz?' : 'Are you sure you want to dismiss this member from the staff database?',
+      confirmText: language === 'tr' ? 'İşten Çıkar' : 'Dismiss',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteStaff(id));
+      showToast('Staff member dismissed successfully!', 'success');
     }
   };
 
@@ -197,7 +209,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
         </div>
 
         {/* Çalışan Onboard Etme Butonu */}
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-staff-btn"
             onClick={handleOpenAddModal}
@@ -272,7 +284,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                 </div>
 
                 {/* İşlem Kontrol Paneli Butonları */}
-                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
                   <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end gap-3.5">
                     <button
                       id={`staff-edit-btn-${member.id}`}

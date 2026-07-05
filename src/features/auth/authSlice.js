@@ -7,7 +7,7 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await authApi.login(credentials);
       if (response.data.success) {
-        localStorage.setItem('branchiq_user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('branchiq_user', JSON.stringify(response.data.user));
         return response.data.user;
       }
       return rejectWithValue('Login failed');
@@ -19,7 +19,7 @@ export const loginUser = createAsyncThunk(
 
 const getInitialUser = () => {
   try {
-    const saved = localStorage.getItem('branchiq_user');
+    const saved = sessionStorage.getItem('branchiq_user');
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -37,7 +37,7 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.error = null;
-      localStorage.removeItem('branchiq_user');
+      sessionStorage.removeItem('branchiq_user');
     },
     clearError: (state) => {
       state.error = null;

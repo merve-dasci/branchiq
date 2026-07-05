@@ -1,19 +1,20 @@
 // React ve durum/etki kancalarını içe aktar
 import React, { useEffect, useState } from 'react';
-// Panel simgelerini Lucide React kütüphanesinden yükle
+// Rezervasyon ekranı simgelerini Lucide React paketinden yükle
 import { 
   Calendar, 
   Plus, 
   Search, 
-  Trash2, 
-  Clock, 
-  User, 
   Users, 
+  Clock, 
+  Phone, 
   Check, 
-  X,
-  Edit2
+  X, 
+  Edit2, 
+  Trash2, 
+  AlertCircle 
 } from 'lucide-react';
-// Redux rezervasyon ve masa güncelleme thunk'larını yükle
+// Redux rezervasyon ve masa thunk eylemlerini import et
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   fetchReservations, 
@@ -24,11 +25,14 @@ import {
 import { fetchTables, updateTable } from '../../features/tables/tablesSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Rezervasyon Defteri Yönetim Sayfası
 export default function Reservations({ currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
   
   // Redux store'dan rezervasyonları ve masaları oku
   const { items, loading, error } = useSelector((state) => state.reservations);
@@ -42,52 +46,53 @@ export default function Reservations({ currentUser }) {
   // Rezervasyon veri formu
   const [formData, setFormData] = useState({
     customerName: '',
-    guests: 2,
-    date: '2026-07-03',
-    time: '19:00',
-    tableNumber: '',
     phone: '',
-    status: 'Confirmed'
+    guests: 2,
+    tableNumber: '',
+    date: '',
+    time: '',
+    status: 'Confirmed',
+    notes: '',
+    branchId: currentUser?.branchId || ''
   });
 
-  // Sayfa yüklendiğinde rezervasyonları ve masaları sunucudan getir
+  // Sayfa yüklendiğinde verileri sunucudan çek
   useEffect(() => {
     dispatch(fetchReservations());
-    dispatch(dispatch => {
-      dispatch(fetchTables());
-    });
+    dispatch(fetchTables());
   }, [dispatch]);
 
-  // Yeni Rezervasyon Ekleme Modalini Aç
+  // Yeni Rezervasyon Modalini Aç
   const handleOpenAddModal = () => {
     const myBranchTables = tables.filter(t => t.branchId === currentUser?.branchId);
-    const defaultTable = myBranchTables.length > 0 ? myBranchTables[0].name : '';
     setEditingRes(null);
     setFormData({
       customerName: '',
+      phone: '',
       guests: 2,
+      tableNumber: myBranchTables[0]?.name || '',
       date: new Date().toISOString().split('T')[0],
       time: '19:00',
-      tableNumber: defaultTable,
-      phone: '',
-      status: 'Confirmed'
+      status: 'Confirmed',
+      notes: '',
+      branchId: currentUser?.branchId || ''
     });
     setIsModalOpen(true);
   };
 
   // Rezervasyon Düzenleme Modalini Aç
   const handleOpenEditModal = (res) => {
-    const myBranchTables = tables.filter(t => t.branchId === currentUser?.branchId);
-    const defaultTable = myBranchTables.length > 0 ? myBranchTables[0].name : '';
     setEditingRes(res);
     setFormData({
       customerName: res.customerName,
+      phone: res.phone || '',
       guests: res.guests,
+      tableNumber: res.tableNumber,
       date: res.date,
       time: res.time,
-      tableNumber: res.tableNumber || defaultTable,
-      phone: res.phone || '',
-      status: res.status || 'Confirmed'
+      status: res.status,
+      notes: res.notes || '',
+      branchId: res.branchId
     });
     setIsModalOpen(true);
   };
@@ -98,7 +103,7 @@ export default function Reservations({ currentUser }) {
     setEditingRes(null);
   };
 
-  // Form Veri Değişimlerini İzle
+  // Form eleman değişim takibi
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -107,79 +112,83 @@ export default function Reservations({ currentUser }) {
     }));
   };
 
-  // Rezervasyon Formunu Gönder
-  const handleSubmit = (e) => {
+  // Rezervasyonu Kaydet (Ekle veya Güncelle)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const myBranchTables = tables.filter(t => t.branchId === currentUser?.branchId);
     const selectedTableObj = myBranchTables.find(t => t.name === formData.tableNumber);
     
     // Masa kapasitesi kontrolü
     if (selectedTableObj && selectedTableObj.capacity < formData.guests) {
-      if (!window.confirm(
-        language === 'tr' 
+      const isConfirmed = await confirm({
+        title: language === 'tr' ? 'Masa Kapasite Uyarısı' : 'Table Capacity Alert',
+        message: language === 'tr' 
           ? `Uyarı: Seçilen masanın kapasitesi (${selectedTableObj.capacity}) rezervasyon kişi sayısından (${formData.guests}) küçüktür. Yine de devam etmek istiyor musunuz?`
-          : `Warning: Selected table capacity (${selectedTableObj.capacity}) is less than guest count (${formData.guests}). Proceed anyway?`
-      )) {
+          : `Warning: Selected table capacity (${selectedTableObj.capacity}) is less than guest count (${formData.guests}). Proceed anyway?`,
+        confirmText: language === 'tr' ? 'Devam Et' : 'Proceed',
+        cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+      });
+      if (!isConfirmed) {
         return;
       }
     }
 
     if (editingRes) {
       dispatch(updateReservation({ id: editingRes.id, ...formData }));
+      showToast(language === 'tr' ? 'Rezervasyon başarıyla güncellendi!' : 'Reservation updated successfully!', 'success');
     } else {
       dispatch(addReservation(formData));
+      showToast(language === 'tr' ? 'Rezervasyon başarıyla oluşturuldu!' : 'Reservation created successfully!', 'success');
     }
 
     // Masa durumlarını rezervasyona göre güncelle
-    if (formData.status === 'Confirmed' && selectedTableObj && selectedTableObj.status === 'available') {
-      dispatch(updateTable({ ...selectedTableObj, status: 'reserved' }));
-    } else if (formData.status === 'Arrived' && selectedTableObj && selectedTableObj.status !== 'occupied') {
-      dispatch(updateTable({ ...selectedTableObj, status: 'occupied' }));
+    if (formData.status === 'Confirmed' && selectedTableObj && (selectedTableObj.status === 'Available' || selectedTableObj.status === 'available')) {
+      dispatch(updateTable({ ...selectedTableObj, status: 'Reserved' }));
+    } else if (formData.status === 'Arrived' && selectedTableObj && selectedTableObj.status !== 'Occupied') {
+      dispatch(updateTable({ ...selectedTableObj, status: 'Occupied' }));
     }
 
     handleCloseModal();
   };
 
   // Rezervasyon İptal/Silme İşlemi
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu rezervasyon kaydını iptal etmek istiyor musunuz?' : 'Cancel this guest reservation?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Rezervasyonu İptal Et' : 'Cancel Reservation',
+      message: language === 'tr' ? 'Bu rezervasyon kaydını iptal etmek istiyor musunuz?' : 'Cancel this guest reservation?',
+      confirmText: language === 'tr' ? 'İptal Et' : 'Cancel',
+      cancelText: language === 'tr' ? 'Korunup Kalsın' : 'Keep'
+    });
+    if (isConfirmed) {
       const res = items.find(r => r.id === id);
       dispatch(deleteReservation(id));
+      showToast(language === 'tr' ? 'Rezervasyon başarıyla iptal edildi!' : 'Reservation cancelled successfully!', 'success');
       if (res) {
         const matchingTable = tables.find(t => t.name === res.tableNumber && t.branchId === currentUser?.branchId);
-        if (matchingTable && matchingTable.status === 'reserved') {
-          dispatch(updateTable({ ...matchingTable, status: 'available' }));
+        if (matchingTable && (matchingTable.status === 'Reserved' || matchingTable.status === 'reserved')) {
+          dispatch(updateTable({ ...matchingTable, status: 'Available' }));
         }
       }
     }
   };
 
-  // Rezervasyon Durumunu Hızlı Değiştir (Müşteri Geldi vb.)
-  const handleStatusChange = (res, newStatus) => {
-    dispatch(updateReservation({ ...res, status: newStatus }));
-    
-    const matchingTable = tables.find(t => t.name === res.tableNumber && t.branchId === currentUser?.branchId);
-    if (newStatus === 'Arrived' && matchingTable) {
-      dispatch(updateTable({ ...matchingTable, status: 'occupied' }));
-    } else if (newStatus === 'Cancelled' && matchingTable && matchingTable.status === 'reserved') {
-      dispatch(updateTable({ ...matchingTable, status: 'available' }));
-    }
-  };
+  // Şube bazlı filtrele
+  const myBranchReservations = items.filter(r => r.branchId === currentUser?.branchId);
 
-  // Arama metnine göre filtrele
-  const filteredReservations = items.filter(res => {
-    return res.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           res.tableNumber?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Arama sorgusuna göre filtrele
+  const filteredReservations = myBranchReservations.filter(res => {
+    const text = `${res.customerName} ${res.tableNumber} ${res.notes || ''}`.toLowerCase();
+    return text.includes(searchQuery.toLowerCase());
   });
 
   return (
     <div id="reservations-panel" className="p-8 space-y-6 animate-fade-in">
       
-      {/* Üst Başlık ve Rezervasyon Ekle Butonu */}
+      {/* Üst Başlık ve Rezervasyon Ekleme Butonu */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">{t('reservations_book')}</h2>
-          <p className="text-xs text-slate-550 font-semibold font-sans">{t('manage_customer_seating')}</p>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">{t('reservations_ledger')}</h2>
+          <p className="text-xs text-slate-500 font-semibold">{t('manage_customer_seating')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
@@ -189,32 +198,34 @@ export default function Reservations({ currentUser }) {
         </button>
       </div>
 
-      {/* Rezervasyon Sayaç Panel Kartları */}
+      {/* KPI Kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('confirmed_bookings')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">
-            {items.filter(r => r.status === 'Confirmed' || r.status === 'Arrived').length}
+            {myBranchReservations.filter(r => r.status === 'Confirmed').length}
           </h4>
         </div>
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('total_guest_covers')}</p>
+          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">{t('total_guest_covers')}</p>
           <h4 className="text-2xl font-black text-blue-600 mt-1">
-            {items.reduce((sum, r) => sum + (r.guests || 0), 0)}
+            {myBranchReservations.reduce((sum, r) => sum + (r.guests || 0), 0)}
           </h4>
         </div>
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('avg_seating_size')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">
-            {items.length > 0 ? (items.reduce((sum, r) => sum + (r.guests || 0), 0) / items.length).toFixed(1) : 0} {language === 'tr' ? 'kişi' : 'pax'}
+            {myBranchReservations.length > 0 
+              ? (myBranchReservations.reduce((sum, r) => sum + r.guests, 0) / myBranchReservations.length).toFixed(1)
+              : '0.0'} {language === 'tr' ? 'pax' : 'pax'}
           </h4>
         </div>
       </div>
 
       {/* Arama Girişi */}
-      <div className="flex gap-4 items-center bg-white p-4 border border-slate-200 rounded-2xl shadow-2xs">
-        <div className="relative w-64">
-          <Search size={14} className="absolute left-3 top-3 text-slate-400" />
+      <div className="bg-white p-4 border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="relative max-w-md">
+          <Search size={14} className="absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
             placeholder={t('search_booking_placeholder')}
@@ -225,88 +236,73 @@ export default function Reservations({ currentUser }) {
         </div>
       </div>
 
-      {/* Ana Rezervasyon Listesi Tablosu */}
+      {/* Rezervasyon Grid Listesi */}
       {filteredReservations.length > 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="p-4">{t('customer_name')}</th>
-                  <th className="p-4">{t('guests_count')}</th>
+                  <th className="p-4">{t('customer')}</th>
+                  <th className="p-4 text-center">{t('guests_count')}</th>
+                  <th className="p-4 text-center">{t('seating_assignment')}</th>
                   <th className="p-4">{t('date_time')}</th>
-                  <th className="p-4">{t('assigned_table')}</th>
-                  <th className="p-4">{t('phone')}</th>
-                  <th className="p-4">{t('status')}</th>
+                  <th className="p-4">{t('booking_status')}</th>
                   <th className="p-4 text-center">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {filteredReservations.map(res => {
                   const statusTranslation = res.status === 'Confirmed' ? (language === 'tr' ? 'Onaylandı' : 'Confirmed') :
-                                            res.status === 'Arrived' ? (language === 'tr' ? 'Geldi' : 'Arrived') :
-                                            (language === 'tr' ? 'İptal' : 'Cancelled');
+                                            res.status === 'Arrived' ? (language === 'tr' ? 'Geldi / Oturdu' : 'Arrived') :
+                                            (language === 'tr' ? 'İptal / Gelmedi' : 'No Show');
 
                   return (
                     <tr key={res.id} className="hover:bg-slate-50/50">
-                      <td className="p-4 font-bold text-slate-900 flex items-center gap-2">
-                        <User size={13} className="text-slate-400" />
-                        <span>{res.customerName}</span>
+                      <td className="p-4 font-bold text-slate-900">
+                        <div>
+                          <p>{res.customerName}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{res.phone || '-'}</p>
+                        </div>
                       </td>
-                      <td className="p-4 text-slate-800">
-                        <span className="flex items-center gap-1">
+                      <td className="p-4 text-center font-extrabold text-slate-800">
+                        <span className="flex items-center justify-center gap-1">
                           <Users size={12} className="text-slate-400" />
-                          <span>{res.guests} {language === 'tr' ? 'kişi' : 'pax'}</span>
+                          {res.guests}
                         </span>
                       </td>
-                      <td className="p-4 text-slate-600">
-                        <span className="flex items-center gap-1">
+                      <td className="p-4 text-center">
+                        <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono text-[10px]">
+                          {language === 'tr' ? res.tableNumber.replace('Table', 'Masa') : res.tableNumber}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 text-slate-650">
                           <Clock size={12} className="text-slate-400" />
                           <span>{res.date} • {res.time}</span>
-                        </span>
+                        </div>
                       </td>
-                      <td className="p-4 font-extrabold text-blue-600">
-                        {language === 'tr' ? res.tableNumber.replace('Table', 'Masa') : res.tableNumber}
-                      </td>
-                      <td className="p-4 font-medium text-slate-555">{res.phone || t('no_phone_set')}</td>
                       <td className="p-4">
-                        <span className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded-md ${
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                          res.status === 'Confirmed' ? 'bg-blue-50 text-blue-700' :
                           res.status === 'Arrived' ? 'bg-emerald-50 text-emerald-700' :
-                          res.status === 'Cancelled' ? 'bg-rose-50 text-rose-700' : 'bg-blue-50 text-blue-700'
+                          'bg-slate-150 text-slate-500'
                         }`}>
                           {statusTranslation}
                         </span>
                       </td>
                       <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {res.status !== 'Arrived' && res.status !== 'Cancelled' && (
-                            <>
-                              <button
-                                onClick={() => handleStatusChange(res, 'Arrived')}
-                                className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg cursor-pointer"
-                                title={language === 'tr' ? 'Geldi Olarak İşaretle' : 'Arrived'}
-                              >
-                                <Check size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(res, 'Cancelled')}
-                                className="p-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg cursor-pointer"
-                                title={language === 'tr' ? 'İptal Et' : 'Cancel'}
-                              >
-                                <X size={12} />
-                              </button>
-                            </>
-                          )}
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleOpenEditModal(res)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-lg cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-blue-600 rounded-md cursor-pointer"
                             title={t('edit') || 'Edit'}
                           >
                             <Edit2 size={12} />
                           </button>
                           <button
                             onClick={() => handleDelete(res.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-lg cursor-pointer"
+                            className="p-1 text-slate-400 hover:text-red-500 rounded-md cursor-pointer"
                             title={t('delete') || 'Delete'}
                           >
                             <Trash2 size={12} />
@@ -333,13 +329,13 @@ export default function Reservations({ currentUser }) {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-zoom-in">
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
-              <h3 className="font-bold">{editingRes ? t('edit_guest_booking') : t('add_booking')}</h3>
+              <h3 className="font-bold">{editingRes ? t('edit_guest_booking') : t('schedule_booking')}</h3>
               <button onClick={handleCloseModal} className="text-slate-400 hover:text-white cursor-pointer">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-slate-600">
               <div>
                 <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('customer_full_name')}</label>
                 <input
@@ -348,7 +344,7 @@ export default function Reservations({ currentUser }) {
                   name="customerName"
                   value={formData.customerName}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
                 />
               </div>
 
@@ -361,22 +357,21 @@ export default function Reservations({ currentUser }) {
                     name="guests"
                     value={formData.guests}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
                   />
                 </div>
+
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('seating_assignment')}</label>
                   <select
-                    required
                     name="tableNumber"
                     value={formData.tableNumber}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold font-bold cursor-pointer text-slate-800"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-bold cursor-pointer text-slate-800"
                   >
-                    <option value="">{t('select_a_table')}</option>
                     {tables.filter(t => t.branchId === currentUser?.branchId).map(t => (
                       <option key={t.id} value={t.name}>
-                        {(language === 'tr' ? t.name.replace('Table', 'Masa') : t.name)} ({t.capacity} {language === 'tr' ? 'Kişilik' : 'seats'}) - {t.status}
+                        {language === 'tr' ? t.name.replace('Table', 'Masa') : t.name} ({t.capacity} Pax)
                       </option>
                     ))}
                   </select>
@@ -392,19 +387,19 @@ export default function Reservations({ currentUser }) {
                     name="date"
                     value={formData.date}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
                   />
                 </div>
+
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('arrival_time_target')}</label>
                   <input
                     required
-                    type="text"
+                    type="time"
                     name="time"
-                    placeholder="e.g. 19:30"
                     value={formData.time}
                     onChange={handleInputChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
                   />
                 </div>
               </div>
@@ -416,7 +411,8 @@ export default function Reservations({ currentUser }) {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold"
+                  placeholder="+90 555 123 4567"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
                 />
               </div>
 
@@ -426,12 +422,24 @@ export default function Reservations({ currentUser }) {
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-bold cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-bold cursor-pointer text-slate-800"
                 >
                   <option value="Confirmed">{language === 'tr' ? 'Onaylandı' : 'Confirmed'}</option>
-                  <option value="Arrived">{language === 'tr' ? 'Geldi' : 'Arrived'}</option>
-                  <option value="Cancelled">{language === 'tr' ? 'İptal Edildi' : 'Cancelled'}</option>
+                  <option value="Arrived">{language === 'tr' ? 'Geldi / Oturdu' : 'Arrived'}</option>
+                  <option value="No-Show">{language === 'tr' ? 'İptal / Gelmedi' : 'No Show'}</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('notes') || 'Notes'}</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="VIP, allergy alert..."
+                  rows={2}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-hidden font-semibold text-slate-800"
+                />
               </div>
 
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
@@ -453,6 +461,7 @@ export default function Reservations({ currentUser }) {
           </div>
         </div>
       )}
+
     </div>
   );
 }

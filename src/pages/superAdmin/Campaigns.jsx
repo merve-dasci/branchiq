@@ -17,11 +17,14 @@ import { useDispatch } from 'react-redux';
 import { addAnnouncement, deleteAnnouncement } from '../../features/campaigns/campaignsSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Kurumsal Duyuru Panosu Yönetim Bileşeni
 export default function Campaigns({ announcements, currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
 
   // Modal Açık/Kapalı durumu ve form girdileri durum yönetimi
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,13 +65,21 @@ export default function Campaigns({ announcements, currentUser }) {
       ...formData,
       date: now.toISOString().split('T')[0]
     }));
+    showToast(language === 'tr' ? 'Duyuru başarıyla yayınlandı!' : 'Notice broadcasted successfully!', 'success');
     handleCloseModal();
   };
 
   // Duyuruyu panodan kalıcı olarak kaldır
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu duyuruyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.' : 'Delete this announcement? This action cannot be undone.')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Duyuruyu Sil' : 'Delete Notice',
+      message: language === 'tr' ? 'Bu duyuruyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.' : 'Delete this announcement? This action cannot be undone.',
+      confirmText: language === 'tr' ? 'Sil' : 'Delete',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteAnnouncement(id));
+      showToast(language === 'tr' ? 'Duyuru başarıyla silindi!' : 'Notice deleted successfully!', 'success');
     }
   };
 
@@ -83,7 +94,7 @@ export default function Campaigns({ announcements, currentUser }) {
         </div>
 
         {/* Duyuru Yayınlama Yetki Butonu */}
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="new-notice-btn"
             onClick={handleOpenModal}
@@ -155,7 +166,7 @@ export default function Campaigns({ announcements, currentUser }) {
                 </div>
 
                 {/* Silme Kontrolü (Yalnızca Süper Admin'ler duyuruları silebilir) */}
-                {currentUser && currentUser.role === 'Super Admin' && (
+                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin') && (
                   <button
                     id={`delete-announcement-btn-${ann.id}`}
                     onClick={() => handleDelete(ann.id)}

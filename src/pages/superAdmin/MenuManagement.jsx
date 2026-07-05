@@ -15,11 +15,14 @@ import { useDispatch } from 'react-redux';
 import { addMenuItem, updateMenuItem, deleteMenuItem } from '../../features/menu/menuSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Süper Admin Menü Yönetimi Bileşeni
 export default function MenuManagement({ menuItems, currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
 
   // Arama filtresi ve kategori filtresi durum yönetimi
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,16 +98,25 @@ export default function MenuManagement({ menuItems, currentUser }) {
     e.preventDefault();
     if (editingItem) {
       dispatch(updateMenuItem({ id: editingItem.id, ...formData }));
+      showToast('Menu item updated successfully!', 'success');
     } else {
       dispatch(addMenuItem(formData));
+      showToast('Menu item created successfully!', 'success');
     }
     handleCloseModal();
   };
 
   // Ürünü Kalıcı Olarak Sil
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu menü ürününü sistemden kalıcı olarak silmek istediğinize emin misiniz?' : 'Are you sure you want to permanently delete this menu item?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Menü Ürününü Sil' : 'Delete Menu Item',
+      message: language === 'tr' ? 'Bu menü ürününü sistemden kalıcı olarak silmek istediğinize emin misiniz?' : 'Are you sure you want to permanently delete this menu item?',
+      confirmText: language === 'tr' ? 'Sil' : 'Delete',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteMenuItem(id));
+      showToast('Menu item deleted successfully!', 'success');
     }
   };
 
@@ -160,7 +172,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
         </div>
 
         {/* Yeni Menü Ürünü Ekleme Butonu */}
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-menu-item-btn"
             onClick={handleOpenAddModal}
@@ -218,12 +230,12 @@ export default function MenuManagement({ menuItems, currentUser }) {
                 </div>
 
                 {/* Düzenleme & Silme İşlem Butonları */}
-                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
                   <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex justify-end gap-3.5">
                     <button
                       id={`menu-item-edit-btn-${item.id}`}
                       onClick={() => handleOpenEditModal(item)}
-                      className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 font-bold transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 text-xs text-slate-650 hover:text-blue-600 font-bold transition-all cursor-pointer"
                     >
                       <Edit2 size={12} />
                       <span>{t('edit') || 'Edit'}</span>

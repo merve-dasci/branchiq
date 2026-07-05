@@ -21,11 +21,14 @@ import {
 } from '../../features/inventory/inventorySlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Süper Admin Stok ve Depo Envanteri Yönetim Bileşeni
 export default function InventoryManagement({ currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
   // Redux store'dan stok listesini oku
   const { items, loading, error } = useSelector((state) => state.inventory);
 
@@ -82,7 +85,7 @@ export default function InventoryManagement({ currentUser }) {
   // Modali Kapat
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingMember(null);
+    setEditingItem(null);
   };
 
   // Form girdilerini izle
@@ -99,16 +102,25 @@ export default function InventoryManagement({ currentUser }) {
     e.preventDefault();
     if (editingItem) {
       dispatch(updateInventoryItem({ id: editingItem.id, ...formData }));
+      showToast('Inventory item updated successfully!', 'success');
     } else {
       dispatch(addInventoryItem(formData));
+      showToast('Inventory item added successfully!', 'success');
     }
     handleCloseModal();
   };
 
   // Stok Kaydını Sil
-  const handleDelete = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu stok kaydını kalıcı olarak silmek istediğinize emin misiniz?' : 'Delete this stock ledger line?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Stok Kaydını Sil' : 'Delete Inventory Item',
+      message: language === 'tr' ? 'Bu stok kaydını kalıcı olarak silmek istediğinize emin misiniz?' : 'Delete this stock ledger line?',
+      confirmText: language === 'tr' ? 'Sil' : 'Delete',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteInventoryItem(id));
+      showToast('Inventory item deleted successfully!', 'success');
     }
   };
 
@@ -134,7 +146,7 @@ export default function InventoryManagement({ currentUser }) {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-black text-slate-900 tracking-tight">{t('inventory_ledger')}</h2>
-          <p className="text-xs text-slate-550 font-semibold">{t('track_key_ingredients')}</p>
+          <p className="text-xs text-slate-500 font-semibold">{t('track_key_ingredients')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}

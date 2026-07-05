@@ -19,11 +19,14 @@ import { useDispatch } from 'react-redux';
 import { updateOrder, addOrder, deleteOrder } from '../../features/orders/ordersSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim ve özel onay modali kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Şube Sipariş Kayıtları Yönetim Sayfası
 export default function Orders({ orders, branches, menuItems, selectedRegion, currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const { showToast, confirm } = useNotification();
 
   // Arama, şube filtresi ve aktif sipariş kuyruk durumları
   const [selectedBranchId, setSelectedBranchId] = useState('All');
@@ -91,8 +94,14 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
   };
 
   // Siparişi iptal etme işlemi
-  const handleCancelOrder = (order) => {
-    if (window.confirm(language === 'tr' ? 'Bu siparişi iptal etmek istediğinize emin misiniz?' : 'Are you sure you want to cancel this order?')) {
+  const handleCancelOrder = async (order) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Siparişi İptal Et' : 'Cancel Order',
+      message: language === 'tr' ? 'Bu siparişi iptal etmek istediğinize emin misiniz?' : 'Are you sure you want to cancel this order?',
+      confirmText: language === 'tr' ? 'Siparişi İptal Et' : 'Cancel Order',
+      cancelText: language === 'tr' ? 'Aktif Tut' : 'Keep Active'
+    });
+    if (isConfirmed) {
       dispatch(updateOrder({
         ...order,
         status: 'Cancelled'
@@ -101,14 +110,22 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       if (selectedOrder && selectedOrder.id === order.id) {
         setSelectedOrder({ ...selectedOrder, status: 'Cancelled' });
       }
+      showToast(language === 'tr' ? 'Sipariş başarıyla iptal edildi!' : 'Order cancelled successfully!', 'success');
     }
   };
 
   // Sipariş kaydını tamamen silme işlemi
-  const handleDeleteOrder = (id) => {
-    if (window.confirm(language === 'tr' ? 'Bu sipariş kaydını sistem veritabanından kalıcı olarak silmek istiyor musunuz?' : 'Delete this order record permanently from the historical ledger?')) {
+  const handleDeleteOrder = async (id) => {
+    const isConfirmed = await confirm({
+      title: language === 'tr' ? 'Sipariş Kaydını Sil' : 'Purge Order Record',
+      message: language === 'tr' ? 'Bu sipariş kaydını sistem veritabanından kalıcı olarak silmek istiyor musunuz?' : 'Delete this order record permanently from the historical ledger?',
+      confirmText: language === 'tr' ? 'Sil' : 'Purge',
+      cancelText: language === 'tr' ? 'İptal' : 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteOrder(id));
       setSelectedOrder(null);
+      showToast(language === 'tr' ? 'Sipariş kaydı başarıyla silindi!' : 'Order record purged successfully!', 'success');
     }
   };
 
@@ -182,6 +199,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     };
 
     dispatch(addOrder(orderData));
+    showToast(language === 'tr' ? 'Sipariş başarıyla oluşturuldu!' : 'Order placed successfully!', 'success');
     setIsNewOrderModalOpen(false);
   };
 
