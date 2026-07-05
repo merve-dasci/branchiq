@@ -1,4 +1,6 @@
+// React ve yerel durum yönetimi için useState kancasını içe aktar
 import React, { useState } from 'react';
+// Arayüzde kullanılacak modern simgeleri Lucide React paketinden ekle
 import { 
   Store, 
   Plus, 
@@ -13,21 +15,31 @@ import {
   Briefcase,
   TrendingUp
 } from 'lucide-react';
+// Redux eylemlerini (actions) tetiklemek için useDispatch kancasını yükle
 import { useDispatch } from 'react-redux';
+// Şube ekleme, güncelleme ve silme thunk eylemlerini import et
 import { addBranch, updateBranch, deleteBranch } from '../../features/branches/branchesSlice.js';
+// Çoklu dil çeviri kancasını (t fonksiyonu) context'ten çek
+import { useLanguage } from '../../context/LanguageContext.jsx';
 
+// Şube listeleme ve yönetim ana bileşeni
 export default function Branches({ branches, selectedRegion, currentUser, onViewDetail }) {
+  // Redux dispatch nesnesini tanımla
   const dispatch = useDispatch();
+  // Dil çeviri çevirisini kullanıma hazırla
+  const { t } = useLanguage();
 
-  // State
+  // Arama metni durum yönetimi (Search query)
   const [searchQuery, setSearchQuery] = useState('');
+  // Durum filtresi yönetimi (All, Active, Inactive)
   const [statusFilter, setStatusFilter] = useState('All');
   
-  // Modal states
+  // Şube Ekleme/Düzenleme modal pencere görünürlüğü durum yönetimi
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Düzenlenen şubenin referansı (Yeni ekleme yapılıyorsa null kalır)
   const [editingBranch, setEditingBranch] = useState(null);
 
-  // Form states
+  // Şube formu girdi alanları durum yönetimi
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -42,23 +54,27 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
     phone: ''
   });
 
-  // Filters
+  // Şubeleri arama, bölge ve durum filtrelerine göre süz (Sadece eşleşenleri listeler)
   const filteredBranches = branches.filter(branch => {
-    // Region Filter
+    // Üst menüden seçilen bölge filtresi kontrolü (All ise hepsini eşle)
     const matchesRegion = selectedRegion === 'All' || branch.region === selectedRegion;
     
-    // Status Filter
+    // Aktif/Pasif durum filtresi kontrolü
     const matchesStatus = statusFilter === 'All' || branch.status === statusFilter;
     
-    // Search Query
+    // Arama kutusuna yazılan metnin isim, şehir, müdür veya adreste geçip geçmediğini kontrol et
     const text = `${branch.name} ${branch.city} ${branch.manager} ${branch.address}`.toLowerCase();
     const matchesSearch = text.includes(searchQuery.toLowerCase());
 
+    // Şubenin gösterilebilmesi için 3 filtrenin de olumlu sonuçlanması gerekir
     return matchesRegion && matchesStatus && matchesSearch;
   });
 
+  // Yeni Şube Ekle modalini açma tetikleyicisi
   const handleOpenAddModal = () => {
+    // Düzenlenen şubeyi temizle (sıfır kayıt olduğunu belirtir)
     setEditingBranch(null);
+    // Form alanlarını varsayılan boş değerler ile doldur
     setFormData({
       name: '',
       city: '',
@@ -72,11 +88,15 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
       tableCount: 15,
       phone: ''
     });
+    // Modali aç
     setIsModalOpen(true);
   };
 
+  // Mevcut Şube Düzenleme modalini açma tetikleyicisi
   const handleOpenEditModal = (branch) => {
+    // Seçilen şubeyi düzenlenecek şube olarak state'e ata
     setEditingBranch(branch);
+    // Şubeye ait güncel verileri forma aktar
     setFormData({
       name: branch.name,
       city: branch.city,
@@ -90,68 +110,82 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
       tableCount: branch.tableCount,
       phone: branch.phone
     });
+    // Modali aç
     setIsModalOpen(true);
   };
 
+  // Modal penceresini kapatma fonksiyonu
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingBranch(null);
   };
 
+  // Form girdileri değiştikçe durum güncelleyen change handler
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
+      // Sayısal alanları otomatik Number tipine dönüştür, diğerlerini metin olarak kaydet
       [name]: name === 'revenueThisMonth' || name === 'dailyOrders' || name === 'rating' || name === 'tableCount'
         ? Number(value)
         : value
     }));
   };
 
+  // Form Kaydet (Submit) tetikleyicisi
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (editingBranch) {
-      // Update
+      // Şube güncelleniyorsa updateBranch eylemini ID ile birlikte dispatch et
       dispatch(updateBranch({ id: editingBranch.id, ...formData }));
     } else {
-      // Create
+      // Yeni şube ekleniyorsa addBranch eylemini dispatch et
       dispatch(addBranch(formData));
     }
+    // Modali kapat
     handleCloseModal();
   };
 
+  // Şube Sil (Decommission) tetikleyicisi
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to permanently delete this branch node from the enterprise?')) {
+    // Kullanıcıya yerelleştirilmiş onay kutusunu göster
+    if (window.confirm(t('delete_branch_confirm'))) {
+      // Onaylandıysa deleteBranch eylemini veritabanına silme isteği atmak üzere tetikle
       dispatch(deleteBranch(id));
     }
   };
 
+  // Şube Aktif/Pasif durum değiştirici hızlı anahtar
   const toggleStatus = (branch) => {
     const updated = {
       ...branch,
+      // Durum 'Active' ise 'Inactive' yap, tersiyse 'Active' yap
       status: branch.status === 'Active' ? 'Inactive' : 'Active'
     };
+    // Güncellenmiş şube durumunu sunucuya kaydetmek üzere dispatch et
     dispatch(updateBranch(updated));
   };
 
   return (
     <div id="branches-panel" className="p-8 space-y-6 animate-fade-in">
       
-      {/* Search and Filters Header */}
+      {/* Üst Arama Kutusu ve Durum Filtre Alanı */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 border border-slate-200 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3 flex-1">
+          {/* Arama Input Kutusu */}
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
             <input
               id="branch-search-input"
               type="text"
-              placeholder="Search branches by name, location, or manager..."
+              placeholder={t('search_branches_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
 
+          {/* Aktif/Pasif Durum Filtre Seçicisi */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 p-2 rounded-xl text-xs">
             <SlidersHorizontal size={14} className="text-slate-500" />
             <select
@@ -160,13 +194,14 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-transparent border-none font-semibold text-slate-700 cursor-pointer focus:outline-hidden"
             >
-              <option value="All">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="All">{t('all_statuses')}</option>
+              <option value="Active">{t('active')}</option>
+              <option value="Inactive">{t('inactive')}</option>
             </select>
           </div>
         </div>
 
+        {/* Yetki Kontrolü: Sadece Super Admin veya Regional Manager yeni şube ekleyebilir */}
         {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-branch-btn"
@@ -174,12 +209,12 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/10 transition-all duration-200 cursor-pointer"
           >
             <Plus size={16} />
-            <span>Add Branch Node</span>
+            <span>{t('add_branch_node')}</span>
           </button>
         )}
       </div>
 
-      {/* Grid of branches */}
+      {/* Şube Kartlarının Listelendiği Alan */}
       {filteredBranches.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredBranches.map(branch => (
@@ -188,7 +223,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
               id={`branch-card-${branch.id}`}
               className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden hover:shadow-md transition-all duration-200 flex flex-col"
             >
-              {/* Header block with status toggle */}
+              {/* Kart İçerik Bloğu */}
               <div className="p-6 pb-4 border-b border-slate-100 flex-1">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-2">
@@ -196,7 +231,18 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                       <Store size={18} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900 tracking-tight text-sm sm:text-base">{branch.name}</h4>
+                      <div className="flex items-center gap-2">
+                        {/* Şube Adı */}
+                        <h4 className="font-bold text-slate-900 tracking-tight text-sm sm:text-base">{branch.name}</h4>
+                        {/* Düşük Performans Uyarısı (Rating < 4.5 veya Ciro < $12,000 ise alarm verir) */}
+                        {(branch.rating < 4.5 || branch.revenueThisMonth < 12000) && (
+                          <span className="text-[9px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-md border border-rose-100 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping" />
+                            <span>{t('low_performance')}</span>
+                          </span>
+                        )}
+                      </div>
+                      {/* Konum Bilgisi */}
                       <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
                         <MapPin size={10} />
                         <span>{branch.address}, {branch.city}</span>
@@ -204,6 +250,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                     </div>
                   </div>
 
+                  {/* Şube Aktif/Pasif Durum Butonu */}
                   <button
                     onClick={() => toggleStatus(branch)}
                     id={`branch-toggle-status-${branch.id}`}
@@ -213,47 +260,48 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                         : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
                     }`}
                   >
-                    {branch.status}
+                    {branch.status === 'Active' ? t('active') : t('inactive')}
                   </button>
                 </div>
 
+                {/* Hızlı Finansal KPI Göstergesi (Aylık Brüt Ciro ve Sipariş Adetleri) */}
                 <div className="grid grid-cols-2 gap-4 mt-4 bg-slate-50 p-3 rounded-xl">
                   <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Monthly Gross</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{t('monthly_gross')}</span>
                     <span className="text-sm font-extrabold text-slate-900">${branch.revenueThisMonth.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Daily Orders</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{t('daily_orders')}</span>
                     <span className="text-sm font-extrabold text-slate-900">{branch.dailyOrders} avg</span>
                   </div>
                 </div>
 
-                {/* Info List */}
+                {/* Şube Genel Detay Listesi */}
                 <div className="space-y-2 mt-4 text-xs text-slate-600">
                   <div className="flex justify-between">
-                    <span className="text-slate-400 font-medium">Regional HQ:</span>
+                    <span className="text-slate-400 font-medium">{t('regional_hq')}</span>
                     <span className="font-semibold text-slate-800">{branch.region}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400 font-medium">General Manager:</span>
+                    <span className="text-slate-400 font-medium">{t('general_manager')}</span>
                     <span className="font-semibold text-slate-800 flex items-center gap-1">
                       <Briefcase size={11} className="text-blue-500" />
                       {branch.manager}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400 font-medium">Table Count:</span>
-                    <span className="font-semibold text-slate-800">{branch.tableCount} tables</span>
+                    <span className="text-slate-400 font-medium">{t('table_count_label')}</span>
+                    <span className="font-semibold text-slate-800">{branch.tableCount}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-medium">Quality Rating:</span>
+                    <span className="text-slate-400 font-medium">{t('quality_rating')}</span>
                     <span className="font-semibold text-amber-500 flex items-center gap-0.5">
                       <Star size={11} fill="currentColor" />
                       {branch.rating}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400 font-medium">Contact:</span>
+                    <span className="text-slate-400 font-medium">{t('contact')}</span>
                     <span className="font-semibold text-slate-700 flex items-center gap-1">
                       <Phone size={11} />
                       {branch.phone}
@@ -262,7 +310,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
               </div>
 
-              {/* Actions Footer Panel */}
+              {/* Kart Alt Panel Eylemleri (Analytics, Configure, Decommission) */}
               <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex justify-between items-center">
                 <button
                   id={`branch-analytics-btn-${branch.id}`}
@@ -270,7 +318,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                   className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-extrabold transition-all cursor-pointer"
                 >
                   <TrendingUp size={12} />
-                  <span>View Analytics</span>
+                  <span>{t('view_analytics')}</span>
                 </button>
                 <div className="flex gap-3.5">
                   <button
@@ -279,8 +327,9 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                     className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 font-bold transition-all cursor-pointer"
                   >
                     <Edit2 size={12} />
-                    <span>Configure</span>
+                    <span>{t('configure')}</span>
                   </button>
+                  {/* Sadece Super Admin şubeyi tamamen devreden çıkarabilir (veritabanından silebilir) */}
                   {currentUser && currentUser.role === 'Super Admin' && (
                     <button
                       id={`branch-delete-btn-${branch.id}`}
@@ -288,7 +337,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                       className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-bold transition-all cursor-pointer"
                     >
                       <Trash2 size={12} />
-                      <span>Decommission</span>
+                      <span>{t('decommission')}</span>
                     </button>
                   )}
                 </div>
@@ -297,21 +346,23 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
           ))}
         </div>
       ) : (
+        // Eşleşen Şube Kaydı Bulunamazsa Gösterilecek Boş Panel
         <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-xs">
           <Store size={48} className="mx-auto text-slate-300 mb-4" />
-          <h4 className="text-slate-800 font-bold">No Branch Nodes Located</h4>
-          <p className="text-xs text-slate-400 mt-1">Try resetting your filter parameters or search queries.</p>
+          <h4 className="text-slate-800 font-bold">{t('no_branches_located')}</h4>
+          <p className="text-xs text-slate-400 mt-1">{t('reset_filter_params')}</p>
         </div>
       )}
 
-      {/* Add / Edit Branch Dialog Modal */}
+      {/* Şube Ekleme / Güncelleme Modal Pencere Formu */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-zoom-in">
+            {/* Modal Başlığı */}
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Store size={18} className="text-blue-400" />
-                <h3 className="font-bold">{editingBranch ? 'Update Branch Details' : 'Provision New Branch'}</h3>
+                <h3 className="font-bold">{editingBranch ? t('update_branch_details') : t('provision_new_branch')}</h3>
               </div>
               <button 
                 id="close-branch-modal-btn"
@@ -322,10 +373,11 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
               </button>
             </div>
 
+            {/* Modal Formu */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Branch Name*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('branch_name')}</label>
                   <input
                     required
                     type="text"
@@ -338,7 +390,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">City*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('city')}</label>
                   <input
                     required
                     type="text"
@@ -351,21 +403,21 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Region Network*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('region_network')}</label>
                   <select
                     name="region"
                     value={formData.region}
                     onChange={handleInputChange}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
                   >
-                    <option value="Marmara">Marmara</option>
-                    <option value="Central Anatolia">Central Anatolia</option>
-                    <option value="Aegean">Aegean</option>
+                    <option value="Marmara">{t('marmara') || 'Marmara'}</option>
+                    <option value="Central Anatolia">{t('central_anatolia') || 'Central Anatolia'}</option>
+                    <option value="Aegean">{t('aegean') || 'Aegean'}</option>
                   </select>
                 </div>
 
                 <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">General Manager Name*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('general_manager_name')}</label>
                   <input
                     required
                     type="text"
@@ -378,7 +430,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Address*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('address_label')}</label>
                   <textarea
                     required
                     name="address"
@@ -391,7 +443,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Monthly Gross Revenue ($)</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('monthly_gross_revenue_label')}</label>
                   <input
                     type="number"
                     name="revenueThisMonth"
@@ -402,7 +454,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Average Daily Orders</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('avg_daily_orders_label')}</label>
                   <input
                     type="number"
                     name="dailyOrders"
@@ -413,7 +465,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Phone Number*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('phone_number_label')}</label>
                   <input
                     required
                     type="text"
@@ -426,7 +478,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Table Count</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('table_count_label')}</label>
                   <input
                     type="number"
                     name="tableCount"
@@ -437,20 +489,21 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                 </div>
               </div>
 
+              {/* Modal Eylem Butonları (İptal / Kaydet) */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleCloseModal}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   id="submit-branch-form-btn"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  {editingBranch ? 'Update Details' : 'Provision Node'}
+                  {editingBranch ? t('update_branch_details') : t('provision_node')}
                 </button>
               </div>
             </form>

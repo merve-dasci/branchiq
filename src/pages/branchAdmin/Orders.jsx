@@ -1,4 +1,6 @@
+// React ve durum kancalarını (hooks) içe aktar
 import React, { useState } from 'react';
+// Panel simgelerini Lucide React kütüphanesinden yükle
 import { 
   ClipboardList, 
   Search, 
@@ -12,21 +14,26 @@ import {
   Plus,
   Trash2
 } from 'lucide-react';
+// Redux store ve sipariş thunk eylemlerini yükle
 import { useDispatch } from 'react-redux';
 import { updateOrder, addOrder, deleteOrder } from '../../features/orders/ordersSlice.js';
+// Çoklu dil kancasını içe aktar
+import { useLanguage } from '../../context/LanguageContext.jsx';
 
+// Şube Sipariş Kayıtları Yönetim Sayfası
 export default function Orders({ orders, branches, menuItems, selectedRegion, currentUser }) {
   const dispatch = useDispatch();
+  const { t, language } = useLanguage();
 
-  // State
+  // Arama, şube filtresi ve aktif sipariş kuyruk durumları
   const [selectedBranchId, setSelectedBranchId] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQueue, setActiveQueue] = useState('All');
   
-  // Detailed modal
+  // Sipariş detayı inceleme modal referansı
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // New mock order placement form state
+  // Yeni simüle sipariş ekleme modal formu durumları
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
   const [newOrderForm, setNewOrderForm] = useState({
     branchId: '',
@@ -35,32 +42,29 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     items: []
   });
 
-  // Filter branches by region
+  // Şubeleri bölge ağı sınırlarına göre filtrele
   const regionalBranches = selectedRegion === 'All' 
     ? branches 
     : branches.filter(b => b.region === selectedRegion);
 
   const regionalBranchIds = regionalBranches.map(b => b.id);
 
-  // Filtering orders
+  // Siparişleri seçilen filtrelere göre listele
   const filteredOrders = orders.filter(order => {
-    // Region scoping
+    // Bölgesel kısıt
     const matchesRegion = selectedRegion === 'All' || regionalBranchIds.includes(order.branchId);
-    
-    // Branch filter
+    // Seçilen şube
     const matchesBranch = selectedBranchId === 'All' || order.branchId === selectedBranchId;
-    
-    // Status queue filter
+    // Mutfak durum kuyruğu
     const matchesQueue = activeQueue === 'All' || order.status === activeQueue;
-    
-    // Text search query
+    // Arama kelimesi (Kod, isim veya şube)
     const text = `${order.id} ${order.customerName} ${order.branchName}`.toLowerCase();
     const matchesSearch = text.includes(searchQuery.toLowerCase());
 
     return matchesRegion && matchesBranch && matchesQueue && matchesSearch;
   });
 
-  // Count helper functions
+  // Duruma göre sipariş adetlerini getiren yardımcı fonksiyon
   const getQueueCount = (status) => {
     return orders.filter(o => {
       const matchesRegion = selectedRegion === 'All' || regionalBranchIds.includes(o.branchId);
@@ -69,7 +73,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }).length;
   };
 
-  // State promotion logic
+  // Sipariş mutfak aşamasını ileriye taşıma mantığı
   const handleAdvanceStatus = (order) => {
     let nextStatus = order.status;
     if (order.status === 'Pending') nextStatus = 'Preparing';
@@ -80,14 +84,15 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       status: nextStatus
     }));
 
-    // Update opened detail card reference if open
+    // Eğer detay modali açıksa oradaki veriyi de senkronize et
     if (selectedOrder && selectedOrder.id === order.id) {
       setSelectedOrder({ ...selectedOrder, status: nextStatus });
     }
   };
 
+  // Siparişi iptal etme işlemi
   const handleCancelOrder = (order) => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
+    if (window.confirm(language === 'tr' ? 'Bu siparişi iptal etmek istediğinize emin misiniz?' : 'Are you sure you want to cancel this order?')) {
       dispatch(updateOrder({
         ...order,
         status: 'Cancelled'
@@ -99,14 +104,15 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }
   };
 
+  // Sipariş kaydını tamamen silme işlemi
   const handleDeleteOrder = (id) => {
-    if (window.confirm('Delete this order record permanently from the historical ledger?')) {
+    if (window.confirm(language === 'tr' ? 'Bu sipariş kaydını sistem veritabanından kalıcı olarak silmek istiyor musunuz?' : 'Delete this order record permanently from the historical ledger?')) {
       dispatch(deleteOrder(id));
       setSelectedOrder(null);
     }
   };
 
-  // Mock Order Form Mechanics
+  // Yeni Simüle Sipariş Formunu Hazırla ve Aç
   const handleOpenNewOrderModal = () => {
     const defaultBranchId = regionalBranches.length > 0 ? regionalBranches[0].id : '';
     setNewOrderForm({
@@ -118,6 +124,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     setIsNewOrderModalOpen(true);
   };
 
+  // Forma yeni satır ekle
   const handleAddFormItem = () => {
     setNewOrderForm(prev => ({
       ...prev,
@@ -125,6 +132,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }));
   };
 
+  // Formdan satır çıkar
   const handleRemoveFormItem = (index) => {
     setNewOrderForm(prev => ({
       ...prev,
@@ -132,6 +140,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }));
   };
 
+  // Form eleman değer değişim takibi
   const handleFormItemChange = (index, field, value) => {
     setNewOrderForm(prev => {
       const updated = [...prev.items];
@@ -140,12 +149,13 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     });
   };
 
+  // Siparişi Veritabanına Ekle/Gönder
   const handlePlaceOrderSubmit = (e) => {
     e.preventDefault();
     const branch = branches.find(b => b.id === newOrderForm.branchId);
     if (!branch) return;
 
-    // Calculate item list with price details
+    // Seçilen ürünleri detaylandır ve maliyetlendir
     const orderItemsList = newOrderForm.items.map(formItem => {
       const originalItem = menuItems.find(m => m.id === formItem.menuItemId);
       return {
@@ -165,7 +175,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       items: orderItemsList,
       totalAmount: total,
       status: 'Pending',
-      customerName: newOrderForm.customerName || 'Anonymous Guest',
+      customerName: newOrderForm.customerName || (language === 'tr' ? 'Anonim Müşteri' : 'Anonymous Guest'),
       type: newOrderForm.type,
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().split(' ')[0].substring(0, 5)
@@ -178,14 +188,14 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
   return (
     <div id="orders-panel" className="p-8 space-y-6 animate-fade-in">
 
-      {/* Summary Queue Badges Header Row */}
+      {/* Sipariş Durum Sayaç Butonları */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { id: 'All', label: 'All Orders', count: orders.length, color: 'border-slate-300 text-slate-800 bg-white' },
-          { id: 'Pending', label: 'Pending Kitchen', count: getQueueCount('Pending'), color: 'border-amber-300 text-amber-700 bg-amber-50/50' },
-          { id: 'Preparing', label: 'Preparing Food', count: getQueueCount('Preparing'), color: 'border-blue-300 text-blue-700 bg-blue-50/50' },
-          { id: 'Completed', label: 'Dispatched / Done', count: getQueueCount('Completed'), color: 'border-emerald-300 text-emerald-700 bg-emerald-50/50' },
-          { id: 'Cancelled', label: 'Cancelled', count: getQueueCount('Cancelled'), color: 'border-rose-300 text-rose-700 bg-rose-50/50' }
+          { id: 'All', label: t('all_orders'), count: orders.length, color: 'border-slate-300 text-slate-800 bg-white' },
+          { id: 'Pending', label: t('pending_kitchen'), count: getQueueCount('Pending'), color: 'border-amber-300 text-amber-700 bg-amber-50/50' },
+          { id: 'Preparing', label: t('preparing_food'), count: getQueueCount('Preparing'), color: 'border-blue-300 text-blue-700 bg-blue-50/50' },
+          { id: 'Completed', label: t('dispatched_done'), count: getQueueCount('Completed'), color: 'border-emerald-300 text-emerald-700 bg-emerald-50/50' },
+          { id: 'Cancelled', label: t('cancelled'), count: getQueueCount('Cancelled'), color: 'border-rose-300 text-rose-700 bg-rose-50/50' }
         ].map(queue => (
           <button
             key={queue.id}
@@ -203,7 +213,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
         ))}
       </div>
 
-      {/* Control Actions Row */}
+      {/* Kontrol Arama Filtre Satırı */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white p-4 border border-slate-200 rounded-2xl shadow-xs">
         <div className="flex flex-1 items-center gap-3">
           <div className="relative flex-1 max-w-md">
@@ -211,7 +221,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
             <input
               id="order-search-input"
               type="text"
-              placeholder="Search by Order ID, customer, branch name..."
+              placeholder={t('search_orders_placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
@@ -226,7 +236,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
               onChange={(e) => setSelectedBranchId(e.target.value)}
               className="bg-transparent border-none font-bold text-slate-600 cursor-pointer focus:outline-hidden"
             >
-              <option value="All">All Branches</option>
+              <option value="All">{t('all_branches')}</option>
               {regionalBranches.map(b => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
@@ -234,81 +244,93 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
           </div>
         </div>
 
+        {/* Sipariş Ekleme Butonu */}
         <button
           id="mock-order-btn"
           onClick={handleOpenNewOrderModal}
           className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-4.5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
         >
           <Plus size={14} />
-          <span>Place New Guest Order</span>
+          <span>{t('place_new_guest_order')}</span>
         </button>
       </div>
 
-      {/* Live Orders Table */}
+      {/* Canlı Sipariş Tablosu */}
       {filteredOrders.length > 0 ? (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="p-4">Order Code</th>
-                  <th className="p-4">Location Branch</th>
-                  <th className="p-4">Customer</th>
-                  <th className="p-4">Kitchen Status</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4 text-right">Total Amount</th>
-                  <th className="p-4 text-center">Actions</th>
+                  <th className="p-4">{t('order_code')}</th>
+                  <th className="p-4">{t('location_branch')}</th>
+                  <th className="p-4">{t('customer')}</th>
+                  <th className="p-4">{t('kitchen_status')}</th>
+                  <th className="p-4">{t('order_type')}</th>
+                  <th className="p-4 text-right">{t('total_amount')}</th>
+                  <th className="p-4 text-center">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredOrders.map(order => (
-                  <tr key={order.id} id={`order-row-${order.id}`} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 font-mono font-bold text-slate-900">{order.id}</td>
-                    <td className="p-4 font-semibold text-slate-800">{order.branchName}</td>
-                    <td className="p-4">
-                      <div>
-                        <p className="font-semibold text-slate-700">{order.customerName}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">{order.date} • {order.time}</p>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                        order.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
-                        order.status === 'Preparing' ? 'bg-blue-100 text-blue-700' :
-                        order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-rose-100 text-rose-700'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="p-4 font-semibold text-slate-600">{order.type}</td>
-                    <td className="p-4 text-right font-black text-slate-900">${order.totalAmount}</td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* Detail Trigger */}
-                        <button
-                          id={`order-view-btn-${order.id}`}
-                          onClick={() => setSelectedOrder(order)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-                          title="Inspect Order Items"
-                        >
-                          <Eye size={14} />
-                        </button>
+                {filteredOrders.map(order => {
+                  const typeTranslation = order.type === 'Dine-In' ? (language === 'tr' ? 'Masaya Servis' : 'Dine-In') :
+                                          order.type === 'Takeaway' ? (language === 'tr' ? 'Gel-Al / Paket' : 'Takeaway') :
+                                          (language === 'tr' ? 'Ev Adresine Servis' : 'Delivery');
 
-                        {/* Advance State Control */}
-                        {order.status !== 'Completed' && order.status !== 'Cancelled' && (
+                  const statusTranslation = order.status === 'Pending' ? (language === 'tr' ? 'Sıra Bekliyor' : 'Pending') :
+                                            order.status === 'Preparing' ? (language === 'tr' ? 'Hazırlanıyor' : 'Preparing') :
+                                            order.status === 'Completed' ? (language === 'tr' ? 'Teslim Edildi' : 'Completed') :
+                                            (language === 'tr' ? 'İptal Edildi' : 'Cancelled');
+
+                  return (
+                    <tr key={order.id} id={`order-row-${order.id}`} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 font-mono font-bold text-slate-900">{order.id}</td>
+                      <td className="p-4 font-semibold text-slate-800">{order.branchName}</td>
+                      <td className="p-4">
+                        <div>
+                          <p className="font-semibold text-slate-700">{order.customerName}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{order.date} • {order.time}</p>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider ${
+                          order.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                          order.status === 'Preparing' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-rose-100 text-rose-700'
+                        }`}>
+                          {statusTranslation}
+                        </span>
+                      </td>
+                      <td className="p-4 font-semibold text-slate-600">{typeTranslation}</td>
+                      <td className="p-4 text-right font-black text-slate-900">${order.totalAmount}</td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Detayları Gör */}
                           <button
-                            id={`order-advance-btn-${order.id}`}
-                            onClick={() => handleAdvanceStatus(order)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] cursor-pointer"
+                            id={`order-view-btn-${order.id}`}
+                            onClick={() => setSelectedOrder(order)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title={t('inspect_order_items')}
                           >
-                            {order.status === 'Pending' ? 'Start cooking' : 'Dispatch'}
+                            <Eye size={14} />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+
+                          {/* Durumu İlerlet */}
+                          {order.status !== 'Completed' && order.status !== 'Cancelled' && (
+                            <button
+                              id={`order-advance-btn-${order.id}`}
+                              onClick={() => handleAdvanceStatus(order)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] cursor-pointer"
+                            >
+                              {order.status === 'Pending' ? t('start_cooking') : t('dispatch')}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -316,19 +338,19 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-xs">
           <ClipboardList size={48} className="mx-auto text-slate-300 mb-4" />
-          <h4 className="text-slate-800 font-bold">No Orders in Queue</h4>
-          <p className="text-xs text-slate-400 mt-1">Operational queues are completely clear.</p>
+          <h4 className="text-slate-800 font-bold">{t('no_orders_in_queue')}</h4>
+          <p className="text-xs text-slate-400 mt-1">{t('operational_queues_clear')}</p>
         </div>
       )}
 
-      {/* Order Detail Modal */}
+      {/* Sipariş Detay İnceleme Modali */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <ShoppingBag size={18} className="text-blue-400" />
-                <h3 className="font-bold">Order Details: {selectedOrder.id}</h3>
+                <h3 className="font-bold">{t('order_details_title')} {selectedOrder.id}</h3>
               </div>
               <button 
                 id="close-order-detail-btn"
@@ -340,36 +362,39 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
             </div>
 
             <div className="p-6 space-y-4">
-              {/* Scope Info */}
+              {/* Bilgi Kutusu */}
               <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-xl">
                 <div>
-                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">Location</p>
+                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">{t('location_branch')}</p>
                   <p className="font-bold text-slate-800">{selectedOrder.branchName}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">Kitchen Status</p>
+                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">{t('kitchen_status')}</p>
                   <span className={`inline-block px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase ${
                     selectedOrder.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
                     selectedOrder.status === 'Preparing' ? 'bg-blue-100 text-blue-700' :
                     selectedOrder.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
                     'bg-rose-100 text-rose-700'
                   }`}>
-                    {selectedOrder.status}
+                    {selectedOrder.status === 'Pending' ? (language === 'tr' ? 'Bekliyor' : 'Pending') :
+                     selectedOrder.status === 'Preparing' ? (language === 'tr' ? 'Hazırlanıyor' : 'Preparing') :
+                     selectedOrder.status === 'Completed' ? (language === 'tr' ? 'Tamamlandı' : 'Completed') :
+                     (language === 'tr' ? 'İptal' : 'Cancelled')}
                   </span>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">Customer Name</p>
+                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">{t('customer')}</p>
                   <p className="font-bold text-slate-800">{selectedOrder.customerName}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">Serving Model</p>
-                  <p className="font-bold text-slate-800">{selectedOrder.type}</p>
+                  <p className="text-slate-400 font-semibold mb-0.5 uppercase text-[9px]">{t('order_type')}</p>
+                  <p className="font-bold text-slate-800">{selectedOrder.type === 'Dine-In' ? (language === 'tr' ? 'Masaya Servis' : 'Dine-In') : selectedOrder.type}</p>
                 </div>
               </div>
 
-              {/* Items List */}
+              {/* Sipariş Edilen Yemekler */}
               <div className="space-y-3">
-                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ordered Culinary Items</h4>
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('ordered_culinary_items')}</h4>
                 <div className="space-y-2 border-y border-slate-100 py-3">
                   {selectedOrder.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between text-xs font-semibold text-slate-700">
@@ -379,12 +404,12 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                   ))}
                 </div>
                 <div className="flex justify-between text-sm font-black text-slate-900 pt-1">
-                  <span>Grand Total</span>
+                  <span>{t('grand_total')}</span>
                   <span>${selectedOrder.totalAmount}</span>
                 </div>
               </div>
 
-              {/* Advanced controls inside detail */}
+              {/* Modaldaki Sipariş Aşaması İlerletme İşlemleri */}
               <div className="flex flex-col gap-2 pt-4 border-t border-slate-100">
                 {selectedOrder.status !== 'Completed' && selectedOrder.status !== 'Cancelled' && (
                   <button
@@ -394,7 +419,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                   >
                     <CheckCircle size={14} />
                     <span>
-                      {selectedOrder.status === 'Pending' ? 'Advance to Cooking Kitchen' : 'Advance to Dispatched/Completed'}
+                      {selectedOrder.status === 'Pending' ? t('advance_to_cooking') : t('advance_to_dispatched')}
                     </span>
                   </button>
                 )}
@@ -406,7 +431,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                     className="w-full bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <XCircle size={14} />
-                    <span>Cancel This Order</span>
+                    <span>{t('cancel_this_order')}</span>
                   </button>
                 )}
 
@@ -417,7 +442,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                     className="w-full bg-transparent hover:bg-red-50 text-red-500 hover:text-red-700 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Trash2 size={14} />
-                    <span>Purge Transaction Record</span>
+                    <span>{t('purge_transaction_record')}</span>
                   </button>
                 )}
               </div>
@@ -426,14 +451,14 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
         </div>
       )}
 
-      {/* Add Mock Order Placement Modal */}
+      {/* Yeni Simüle Sipariş Ekleme Modali */}
       {isNewOrderModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-zoom-in">
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-blue-400" />
-                <h3 className="font-bold">Place Guest Mock Order</h3>
+                <h3 className="font-bold">{t('place_guest_mock_order')}</h3>
               </div>
               <button 
                 id="close-mock-order-modal-btn"
@@ -447,7 +472,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
             <form onSubmit={handlePlaceOrderSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Target Branch*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">{t('target_branch')}</label>
                   <select
                     required
                     value={newOrderForm.branchId}
@@ -461,21 +486,21 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Service Type*</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">{t('service_type')}</label>
                   <select
                     required
                     value={newOrderForm.type}
                     onChange={(e) => setNewOrderForm(prev => ({ ...prev, type: e.target.value }))}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-hidden cursor-pointer"
                   >
-                    <option value="Dine-In">Dine-In</option>
-                    <option value="Takeaway">Takeaway</option>
-                    <option value="Delivery">Delivery</option>
+                    <option value="Dine-In">{language === 'tr' ? 'Masaya Servis' : 'Dine-In'}</option>
+                    <option value="Takeaway">{language === 'tr' ? 'Gel-Al' : 'Takeaway'}</option>
+                    <option value="Delivery">{language === 'tr' ? 'Adrese Teslim' : 'Delivery'}</option>
                   </select>
                 </div>
 
                 <div className="col-span-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Customer Name</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">{t('customer')}</label>
                   <input
                     type="text"
                     required
@@ -486,16 +511,16 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                   />
                 </div>
 
-                {/* Sub items picker */}
+                {/* Ürün Ekleme/Çıkarma Alt Bölümü */}
                 <div className="col-span-2 space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Dish & Quantity Selector</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{t('dish_quantity_selector')}</label>
                     <button
                       type="button"
                       onClick={handleAddFormItem}
                       className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 cursor-pointer"
                     >
-                      <Plus size={12} /> Add Item
+                      <Plus size={12} /> {t('add_item')}
                     </button>
                   </div>
 
@@ -533,20 +558,21 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
 
               </div>
 
+              {/* Form Alt Butonları */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsNewOrderModalOpen(false)}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   id="submit-mock-order-form-btn"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all cursor-pointer"
                 >
-                  Dispatch to Kitchen
+                  {t('dispatch_to_kitchen')}
                 </button>
               </div>
             </form>

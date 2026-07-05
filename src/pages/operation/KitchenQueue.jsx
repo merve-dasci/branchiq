@@ -1,4 +1,6 @@
+// React ve etki kancasını (useEffect) içe aktar
 import React, { useEffect } from 'react';
+// Mutfak kuyruğu simgelerini Lucide React paketinden yükle
 import { 
   ClipboardList, 
   Clock, 
@@ -8,23 +10,31 @@ import {
   RotateCcw,
   AlertTriangle
 } from 'lucide-react';
+// Redux eylemleri ve store bağlantı kancalarını yükle
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrders, updateOrder } from '../../features/orders/ordersSlice.js';
+// Çoklu dil kancasını içe aktar
+import { useLanguage } from '../../context/LanguageContext.jsx';
 
+// Operasyon Admin Mutfak Sipariş Kuyruğu Bileşeni
 export default function KitchenQueue({ currentUser }) {
   const dispatch = useDispatch();
+  const { t, language } = useLanguage();
+  // Redux store'dan güncel sipariş listesini al
   const { items, loading, error } = useSelector((state) => state.orders);
 
+  // Sayfa yüklendiğinde sipariş listesini sunucudan çek
   useEffect(() => {
     dispatch(fetchOrders());
   }, [dispatch]);
 
+  // Giriş yapmış kullanıcının şube ID'sini al
   const targetBranchId = currentUser?.branchId || '';
 
-  // Filter orders by branch
+  // Siparişleri sadece bu şubeye ait olanlar şeklinde süz
   const branchOrders = items.filter(o => o.branchId === targetBranchId);
 
-  // Group active orders for columns
+  // Belirli durumlara sahip sipariş biletlerini gruplayan yardımcı metot
   const getOrdersByStatus = (statusList) => {
     return branchOrders.filter(o => {
       const status = o.status?.toLowerCase();
@@ -32,14 +42,17 @@ export default function KitchenQueue({ currentUser }) {
     });
   };
 
+  // Siparişleri durum kolonlarına göre grupla
   const newOrders = getOrdersByStatus(['pending', 'new']);
   const preparingOrders = getOrdersByStatus(['preparing']);
   const readyOrders = getOrdersByStatus(['ready']);
 
+  // Siparişin mutfak durumunu güncelle (Hazırlanıyor, Hazır, Tamamlandı vb.)
   const handleUpdateStatus = (order, nextStatus) => {
     dispatch(updateOrder({ ...order, status: nextStatus }));
   };
 
+  // Sipariş önceliğine göre görsel renk kartı atayan yardımcı metot
   const getPriorityColor = (priority) => {
     const p = priority?.toLowerCase() || 'medium';
     if (p === 'high') return 'bg-rose-50 border-rose-200 text-rose-700';
@@ -49,48 +62,50 @@ export default function KitchenQueue({ currentUser }) {
 
   return (
     <div id="kitchen-queue-panel" className="p-8 space-y-6 animate-fade-in">
+      
+      {/* Üst Başlık Bilgisi */}
       <div className="flex justify-between items-center">
         <div>
-          <span className="bg-amber-600 text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md text-white">Back-Of-House Console</span>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight mt-2.5">Live Kitchen Preparation Queue</h2>
-          <p className="text-xs text-slate-500 font-semibold font-sans">Track real-time cooking tickets, elapsed SLAs, and dish checklists.</p>
+          <span className="bg-amber-600 text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md text-white">{t('kitchen_console')}</span>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight mt-2.5">{t('live_kitchen_queue')}</h2>
+          <p className="text-xs text-slate-500 font-semibold font-sans">{t('track_cooking_tickets')}</p>
         </div>
         
         <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold animate-pulse">
           <ChefHat size={14} />
-          <span>Kitchen Engine Active</span>
+          <span>{t('kitchen_engine_active')}</span>
         </div>
       </div>
 
-      {/* Grid count metrics */}
+      {/* Sipariş Sayacı KPI Kartları */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Incoming Tickets (New)</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('incoming_tickets_new')}</p>
           <h4 className="text-2xl font-black text-blue-600 mt-1">
             {newOrders.length}
           </h4>
         </div>
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Active In-Prep (Preparing)</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('active_in_prep')}</p>
           <h4 className="text-2xl font-black text-amber-600 mt-1">
             {preparingOrders.length}
           </h4>
         </div>
         <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Ready for Pick-Up</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('ready_for_pickup')}</p>
           <h4 className="text-2xl font-black text-emerald-600 mt-1">
             {readyOrders.length}
           </h4>
         </div>
       </div>
 
-      {/* 3-Column Kanban Board */}
+      {/* 3 Kolonlu Mutfak Kanban Tahtası (Kanban Board) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* COLUMN 1: NEW */}
+        {/* KOLON 1: YENİ SİPARİŞLER (NEW) */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col space-y-4">
           <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">New Tickets</span>
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{t('new_tickets')}</span>
             <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">{newOrders.length}</span>
           </div>
           <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
@@ -100,22 +115,24 @@ export default function KitchenQueue({ currentUser }) {
                   key={order.id} 
                   order={order} 
                   onAction={() => handleUpdateStatus(order, 'Preparing')} 
-                  actionLabel="Mark Preparing"
+                  actionLabel={t('mark_preparing')}
                   actionIcon={<Play size={13} />}
                   actionClass="bg-blue-600 hover:bg-blue-700 text-white"
                   getPriorityColor={getPriorityColor}
+                  t={t}
+                  language={language}
                 />
               ))
             ) : (
-              <EmptyColumnState message="No new tickets" />
+              <EmptyColumnState message={t('no_new_tickets')} />
             )}
           </div>
         </div>
 
-        {/* COLUMN 2: PREPARING */}
+        {/* KOLON 2: HAZIRLANANLAR (PREPARING) */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col space-y-4">
           <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Preparing</span>
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{t('preparing')}</span>
             <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">{preparingOrders.length}</span>
           </div>
           <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
@@ -125,22 +142,24 @@ export default function KitchenQueue({ currentUser }) {
                   key={order.id} 
                   order={order} 
                   onAction={() => handleUpdateStatus(order, 'Ready')} 
-                  actionLabel="Mark Ready"
+                  actionLabel={t('mark_ready')}
                   actionIcon={<Check size={13} />}
                   actionClass="bg-amber-600 hover:bg-amber-700 text-white"
                   getPriorityColor={getPriorityColor}
+                  t={t}
+                  language={language}
                 />
               ))
             ) : (
-              <EmptyColumnState message="No orders in preparation" />
+              <EmptyColumnState message={t('no_orders_preparing')} />
             )}
           </div>
         </div>
 
-        {/* COLUMN 3: READY */}
+        {/* KOLON 3: HAZIR / TESLİM AŞAMASI (READY) */}
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col space-y-4">
           <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Ready for Service</span>
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{t('ready_for_service')}</span>
             <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">{readyOrders.length}</span>
           </div>
           <div className="space-y-4 overflow-y-auto max-h-[600px] pr-1">
@@ -150,14 +169,16 @@ export default function KitchenQueue({ currentUser }) {
                   key={order.id} 
                   order={order} 
                   onAction={() => handleUpdateStatus(order, 'Completed')} 
-                  actionLabel="Complete Order"
+                  actionLabel={t('complete_order')}
                   actionIcon={<Check size={13} />}
                   actionClass="bg-emerald-600 hover:bg-emerald-700 text-white"
                   getPriorityColor={getPriorityColor}
+                  t={t}
+                  language={language}
                 />
               ))
             ) : (
-              <EmptyColumnState message="No orders ready for pickup" />
+              <EmptyColumnState message={t('no_orders_ready')} />
             )}
           </div>
         </div>
@@ -167,31 +188,32 @@ export default function KitchenQueue({ currentUser }) {
   );
 }
 
-// Reusable Order Card for Kitchen Queue Columns
-function OrderCard({ order, onAction, actionLabel, actionIcon, actionClass, getPriorityColor }) {
-  const isPrep = order.status?.toLowerCase() === 'preparing';
-  const table = order.tableNumber || 'Table ' + (order.id.slice(-2) % 15 + 1);
+// Kanban Kolonları İçin Yeniden Kullanılabilir Sipariş Bilet Kartı (OrderCard)
+function OrderCard({ order, onAction, actionLabel, actionIcon, actionClass, getPriorityColor, t, language }) {
+  const table = order.tableNumber || (language === 'tr' ? 'Masa ' : 'Table ') + (order.id.slice(-2) % 15 + 1);
   const priority = order.priority || (order.id.slice(-2) % 3 === 0 ? 'High' : 'Medium');
 
   return (
-    <div className={`p-4 rounded-xl border bg-white border-slate-200 hover:shadow-md transition-all flex flex-col gap-3.5`}>
-      {/* Header block */}
+    <div className="p-4 rounded-xl border bg-white border-slate-200 hover:shadow-md transition-all flex flex-col gap-3.5">
+      {/* Bilet Üst Başlık Bilgisi */}
       <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
         <div>
           <h4 className="text-xs font-black text-slate-900">{order.id}</h4>
-          <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{order.type} • {order.time}</p>
+          <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">
+            {order.type === 'Dine-in' ? (language === 'tr' ? 'Masa' : 'Dine-in') : (language === 'tr' ? 'Paket' : 'Delivery')} • {order.time}
+          </p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <span className={`px-2 py-0.5 rounded-md text-[8px] font-bold uppercase border ${getPriorityColor(priority)}`}>
-            {priority}
+            {priority === 'High' ? (language === 'tr' ? 'Yüksek' : 'High') : (language === 'tr' ? 'Orta' : 'Medium')}
           </span>
           <span className="text-[10px] font-bold text-blue-600">{table}</span>
         </div>
       </div>
 
-      {/* Items detail list */}
+      {/* Sipariş Edilen Yemeklerin Listesi */}
       <div className="flex-1 space-y-2">
-        <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">Dish Prep Checklist</p>
+        <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider">{t('dish_prep_checklist')}</p>
         <div className="space-y-1">
           {order.items?.map((dish, i) => (
             <div key={i} className="flex justify-between text-[11px] font-semibold text-slate-700">
@@ -202,13 +224,13 @@ function OrderCard({ order, onAction, actionLabel, actionIcon, actionClass, getP
         </div>
       </div>
 
-      {/* Special Notes */}
+      {/* Özel Müşteri İstekleri */}
       <div className="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-500 font-medium border border-slate-100">
-        <span className="font-bold text-slate-400 uppercase text-[8px] block mb-0.5">Special Requests:</span>
-        {order.notes || "No special requests."}
+        <span className="font-bold text-slate-400 uppercase text-[8px] block mb-0.5">{t('special_requests')}</span>
+        {order.notes || t('no_special_requests')}
       </div>
 
-      {/* Action Button */}
+      {/* Durum İlerletme Butonu */}
       <div className="pt-2 border-t border-slate-100">
         <button
           onClick={onAction}
@@ -222,6 +244,7 @@ function OrderCard({ order, onAction, actionLabel, actionIcon, actionClass, getP
   );
 }
 
+// Boş Kolon Durum Bildirgesi
 function EmptyColumnState({ message }) {
   return (
     <div className="border border-dashed border-slate-350 rounded-xl p-8 text-center bg-white/40">

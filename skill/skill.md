@@ -26,7 +26,7 @@ Bu doküman, BranchIQ projesinde kullanılacak teknolojileri, geliştirme standa
 
 ## Mock Backend
 
-- JSON Server
+- Node.js Express.js
 
 ## Build Tool
 

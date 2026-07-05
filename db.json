@@ -172,7 +172,12 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 2, "price": 280 }
+        {
+          "menuItemId": "m1",
+          "name": "Truffle Burger",
+          "quantity": 2,
+          "price": 280
+        }
       ],
       "totalAmount": 560,
       "status": "Completed",
@@ -186,8 +191,18 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m2", "name": "Crispy Chicken Bao", "quantity": 1, "price": 190 },
-        { "menuItemId": "m5", "name": "San Sebastian Cheesecake", "quantity": 1, "price": 160 }
+        {
+          "menuItemId": "m2",
+          "name": "Crispy Chicken Bao",
+          "quantity": 1,
+          "price": 190
+        },
+        {
+          "menuItemId": "m5",
+          "name": "San Sebastian Cheesecake",
+          "quantity": 1,
+          "price": 160
+        }
       ],
       "totalAmount": 350,
       "status": "Preparing",
@@ -201,7 +216,12 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m3", "name": "Quinoa Avocado Salad", "quantity": 1, "price": 210 }
+        {
+          "menuItemId": "m3",
+          "name": "Quinoa Avocado Salad",
+          "quantity": 1,
+          "price": 210
+        }
       ],
       "totalAmount": 210,
       "status": "Completed",
@@ -215,8 +235,18 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 1, "price": 280 },
-        { "menuItemId": "m4", "name": "Fettuccine Alfredo", "quantity": 2, "price": 260 }
+        {
+          "menuItemId": "m1",
+          "name": "Truffle Burger",
+          "quantity": 1,
+          "price": 280
+        },
+        {
+          "menuItemId": "m4",
+          "name": "Fettuccine Alfredo",
+          "quantity": 2,
+          "price": 260
+        }
       ],
       "totalAmount": 800,
       "status": "Pending",
@@ -230,8 +260,18 @@
       "branchId": "b2",
       "branchName": "BranchIQ Besiktas",
       "items": [
-        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 3, "price": 280 },
-        { "menuItemId": "m6", "name": "Matcha Latte", "quantity": 3, "price": 95 }
+        {
+          "menuItemId": "m1",
+          "name": "Truffle Burger",
+          "quantity": 3,
+          "price": 280
+        },
+        {
+          "menuItemId": "m6",
+          "name": "Matcha Latte",
+          "quantity": 3,
+          "price": 95
+        }
       ],
       "totalAmount": 1125,
       "status": "Completed",
@@ -245,7 +285,12 @@
       "branchId": "b2",
       "branchName": "BranchIQ Besiktas",
       "items": [
-        { "menuItemId": "m4", "name": "Fettuccine Alfredo", "quantity": 1, "price": 260 }
+        {
+          "menuItemId": "m4",
+          "name": "Fettuccine Alfredo",
+          "quantity": 1,
+          "price": 260
+        }
       ],
       "totalAmount": 260,
       "status": "Preparing",
@@ -259,7 +304,12 @@
       "branchId": "b3",
       "branchName": "BranchIQ Cankaya",
       "items": [
-        { "menuItemId": "m5", "name": "San Sebastian Cheesecake", "quantity": 2, "price": 160 }
+        {
+          "menuItemId": "m5",
+          "name": "San Sebastian Cheesecake",
+          "quantity": 2,
+          "price": 160
+        }
       ],
       "totalAmount": 320,
       "status": "Completed",
@@ -273,7 +323,12 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m2", "name": "Crispy Chicken Bao", "quantity": 2, "price": 190 }
+        {
+          "menuItemId": "m2",
+          "name": "Crispy Chicken Bao",
+          "quantity": 2,
+          "price": 190
+        }
       ],
       "totalAmount": 380,
       "status": "Preparing",
@@ -287,7 +342,12 @@
       "branchId": "b1",
       "branchName": "BranchIQ Kadikoy",
       "items": [
-        { "menuItemId": "m1", "name": "Truffle Burger", "quantity": 1, "price": 280 }
+        {
+          "menuItemId": "m1",
+          "name": "Truffle Burger",
+          "quantity": 1,
+          "price": 280
+        }
       ],
       "totalAmount": 280,
       "status": "Ready",
@@ -295,6 +355,25 @@
       "type": "Takeaway",
       "date": "2026-07-04",
       "time": "20:30"
+    },
+    {
+      "id": "ord-1010",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        {
+          "menuItemId": "m4",
+          "name": "Fettuccine Alfredo",
+          "quantity": 1,
+          "price": 260
+        }
+      ],
+      "totalAmount": 260,
+      "status": "Pending",
+      "customerName": "merve daşçi",
+      "type": "Dine-In",
+      "date": "2026-07-05",
+      "time": "17:46"
     }
   ],
   "staff": [
@@ -453,6 +532,15 @@
       "branchName": "BranchIQ Besiktas",
       "branchId": "b2",
       "supplier": "Daily Dairy Farm"
+    },
+    {
+      "id": "inv-6",
+      "name": "köfte",
+      "quantity": 20,
+      "unit": "20kg",
+      "minLimit": 10,
+      "branchName": "All Branches",
+      "supplier": ""
     }
   ],
   "reservations": [
@@ -503,7 +591,7 @@
       "id": "t-2",
       "name": "Table 2",
       "capacity": 2,
-      "status": "occupied",
+      "status": "reserved",
       "section": "Main Hall",
       "branchId": "b1",
       "currentOrderId": "ord-1002"
@@ -520,7 +608,7 @@
       "id": "t-4",
       "name": "Table 4",
       "capacity": 4,
-      "status": "cleaning",
+      "status": "Available",
       "section": "Garden Patio",
       "branchId": "b1"
     },
