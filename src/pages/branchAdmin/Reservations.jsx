@@ -19,9 +19,11 @@ import {
   deleteReservation 
 } from '../../features/reservations/reservationsSlice.js';
 import { fetchTables, updateTable } from '../../features/tables/tablesSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function Reservations({ currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
   const { items, loading, error } = useSelector((state) => state.reservations);
   const { items: tables } = useSelector((state) => state.tables);
 
@@ -89,21 +91,29 @@ export default function Reservations({ currentUser }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const myBranchTables = tables.filter(t => t.branchId === currentUser?.branchId);
     const selectedTableObj = myBranchTables.find(t => t.name === formData.tableNumber);
     
     if (selectedTableObj && selectedTableObj.capacity < formData.guests) {
-      if (!window.confirm(`Warning: Selected table capacity (${selectedTableObj.capacity}) is less than guest count (${formData.guests}). Proceed anyway?`)) {
+      const isConfirmed = await confirm({
+        title: 'Table Capacity Alert',
+        message: `Warning: Selected table capacity (${selectedTableObj.capacity}) is less than guest count (${formData.guests}). Proceed anyway?`,
+        confirmText: 'Proceed',
+        cancelText: 'Cancel'
+      });
+      if (!isConfirmed) {
         return;
       }
     }
 
     if (editingRes) {
       dispatch(updateReservation({ id: editingRes.id, ...formData }));
+      showToast('Reservation updated successfully!', 'success');
     } else {
       dispatch(addReservation(formData));
+      showToast('Reservation created successfully!', 'success');
     }
 
     // Sync table status
@@ -116,10 +126,17 @@ export default function Reservations({ currentUser }) {
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Cancel this guest reservation?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Cancel Reservation',
+      message: 'Cancel this guest reservation?',
+      confirmText: 'Cancel',
+      cancelText: 'Keep'
+    });
+    if (isConfirmed) {
       const res = items.find(r => r.id === id);
       dispatch(deleteReservation(id));
+      showToast('Reservation cancelled successfully!', 'success');
       if (res) {
         const matchingTable = tables.find(t => t.name === res.tableNumber && t.branchId === currentUser?.branchId);
         if (matchingTable && matchingTable.status === 'reserved') {

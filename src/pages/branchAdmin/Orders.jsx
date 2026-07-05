@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { updateOrder, addOrder, deleteOrder } from '../../features/orders/ordersSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function Orders({ orders, branches, menuItems, selectedRegion, currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
 
   // State
   const [selectedBranchId, setSelectedBranchId] = useState('All');
@@ -86,8 +88,14 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }
   };
 
-  const handleCancelOrder = (order) => {
-    if (window.confirm('Are you sure you want to cancel this order?')) {
+  const handleCancelOrder = async (order) => {
+    const isConfirmed = await confirm({
+      title: 'Cancel Order',
+      message: 'Are you sure you want to cancel this order?',
+      confirmText: 'Cancel Order',
+      cancelText: 'Keep Active'
+    });
+    if (isConfirmed) {
       dispatch(updateOrder({
         ...order,
         status: 'Cancelled'
@@ -96,13 +104,21 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       if (selectedOrder && selectedOrder.id === order.id) {
         setSelectedOrder({ ...selectedOrder, status: 'Cancelled' });
       }
+      showToast('Order cancelled successfully!', 'success');
     }
   };
 
-  const handleDeleteOrder = (id) => {
-    if (window.confirm('Delete this order record permanently from the historical ledger?')) {
+  const handleDeleteOrder = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Purge Order Record',
+      message: 'Delete this order record permanently from the historical ledger?',
+      confirmText: 'Purge',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteOrder(id));
       setSelectedOrder(null);
+      showToast('Order record purged successfully!', 'success');
     }
   };
 
@@ -172,6 +188,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     };
 
     dispatch(addOrder(orderData));
+    showToast('Order placed successfully!', 'success');
     setIsNewOrderModalOpen(false);
   };
 
@@ -410,7 +427,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                   </button>
                 )}
 
-                {currentUser && currentUser.role === 'Super Admin' && (
+                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin') && (
                   <button
                     id="modal-delete-order-btn"
                     onClick={() => handleDeleteOrder(selectedOrder.id)}

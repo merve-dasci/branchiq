@@ -10,9 +10,11 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addMenuItem, updateMenuItem, deleteMenuItem } from '../../features/menu/menuSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function MenuManagement({ menuItems, currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,15 +85,24 @@ export default function MenuManagement({ menuItems, currentUser }) {
     e.preventDefault();
     if (editingItem) {
       dispatch(updateMenuItem({ id: editingItem.id, ...formData }));
+      showToast('Menu item updated successfully!', 'success');
     } else {
       dispatch(addMenuItem(formData));
+      showToast('Menu item created successfully!', 'success');
     }
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to permanently delete this menu item?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Menu Item',
+      message: 'Are you sure you want to permanently delete this menu item?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteMenuItem(id));
+      showToast('Menu item deleted successfully!', 'success');
     }
   };
 
@@ -135,7 +146,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
           </div>
         </div>
 
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-menu-item-btn"
             onClick={handleOpenAddModal}
@@ -186,7 +197,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
               </div>
 
               {/* Configure footer panel */}
-              {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+              {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
                 <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-100 flex justify-end gap-3.5">
                   <button
                     id={`menu-item-edit-btn-${item.id}`}

@@ -17,9 +17,11 @@ import {
   updateTable, 
   deleteTable 
 } from '../../features/tables/tablesSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function TableManagement({ currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
   const { items, loading, error } = useSelector((state) => state.tables);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,15 +77,24 @@ export default function TableManagement({ currentUser }) {
     e.preventDefault();
     if (editingTable) {
       dispatch(updateTable({ id: editingTable.id, ...formData }));
+      showToast('Table updated successfully!', 'success');
     } else {
       dispatch(addTable(formData));
+      showToast('Table added successfully!', 'success');
     }
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Remove this table layout configuration?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Remove Table',
+      message: 'Remove this table layout configuration?',
+      confirmText: 'Remove',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteTable(id));
+      showToast('Table removed successfully!', 'success');
     }
   };
 

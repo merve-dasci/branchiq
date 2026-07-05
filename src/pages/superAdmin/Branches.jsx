@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addBranch, updateBranch, deleteBranch } from '../../features/branches/branchesSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function Branches({ branches, selectedRegion, currentUser, onViewDetail }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,16 +115,25 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
     if (editingBranch) {
       // Update
       dispatch(updateBranch({ id: editingBranch.id, ...formData }));
+      showToast('Branch updated successfully!', 'success');
     } else {
       // Create
       dispatch(addBranch(formData));
+      showToast('Branch created successfully!', 'success');
     }
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to permanently delete this branch node from the enterprise?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Decommission Branch',
+      message: 'Are you sure you want to permanently delete this branch node from the enterprise?',
+      confirmText: 'Decommission',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteBranch(id));
+      showToast('Branch decommissioned successfully!', 'success');
     }
   };
 
@@ -167,7 +178,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
           </div>
         </div>
 
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-branch-btn"
             onClick={handleOpenAddModal}
@@ -281,7 +292,7 @@ export default function Branches({ branches, selectedRegion, currentUser, onView
                     <Edit2 size={12} />
                     <span>Configure</span>
                   </button>
-                  {currentUser && currentUser.role === 'Super Admin' && (
+                  {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin') && (
                     <button
                       id={`branch-delete-btn-${branch.id}`}
                       onClick={() => handleDelete(branch.id)}

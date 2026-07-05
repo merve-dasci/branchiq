@@ -14,9 +14,11 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addStaff, updateStaff, deleteStaff } from '../../features/employees/employeesSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function Employees({ staff, branches, selectedRegion, currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,15 +110,24 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
 
     if (editingMember) {
       dispatch(updateStaff({ id: editingMember.id, ...postData }));
+      showToast('Staff member updated successfully!', 'success');
     } else {
       dispatch(addStaff(postData));
+      showToast('Staff member onboarded successfully!', 'success');
     }
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to dismiss this member from the staff database?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Dismiss Staff Member',
+      message: 'Are you sure you want to dismiss this member from the staff database?',
+      confirmText: 'Dismiss',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteStaff(id));
+      showToast('Staff member dismissed successfully!', 'success');
     }
   };
 
@@ -170,7 +181,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
           </div>
         </div>
 
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="add-staff-btn"
             onClick={handleOpenAddModal}
@@ -237,7 +248,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
               </div>
 
               {/* Action Controls footer panel */}
-              {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+              {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
                 <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end gap-3.5">
                   <button
                     id={`staff-edit-btn-${member.id}`}

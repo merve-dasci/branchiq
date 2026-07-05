@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addAnnouncement, deleteAnnouncement } from '../../features/campaigns/campaignsSlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function Campaigns({ announcements, currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
 
   // State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,12 +53,20 @@ export default function Campaigns({ announcements, currentUser }) {
       ...formData,
       date: now.toISOString().split('T')[0]
     }));
+    showToast('Notice broadcasted successfully!', 'success');
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this announcement? This action cannot be undone.')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Notice',
+      message: 'Delete this announcement? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteAnnouncement(id));
+      showToast('Notice deleted successfully!', 'success');
     }
   };
 
@@ -70,7 +80,7 @@ export default function Campaigns({ announcements, currentUser }) {
           <p className="text-xs text-slate-500">Communicate guidelines, policy adjustments, and branch achievements.</p>
         </div>
 
-        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'Regional Manager') && (
+        {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin' || currentUser.role === 'Regional Manager') && (
           <button
             id="new-notice-btn"
             onClick={handleOpenModal}
@@ -137,7 +147,7 @@ export default function Campaigns({ announcements, currentUser }) {
                 </div>
 
                 {/* Delete button (HQ Super Admins only) */}
-                {currentUser && currentUser.role === 'Super Admin' && (
+                {currentUser && (currentUser.role === 'Super Admin' || currentUser.role === 'superAdmin') && (
                   <button
                     id={`delete-announcement-btn-${ann.id}`}
                     onClick={() => handleDelete(ann.id)}

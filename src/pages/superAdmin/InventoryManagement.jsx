@@ -16,9 +16,11 @@ import {
   updateInventoryItem, 
   deleteInventoryItem 
 } from '../../features/inventory/inventorySlice.js';
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 export default function InventoryManagement({ currentUser }) {
   const dispatch = useDispatch();
+  const { showToast, confirm } = useNotification();
   const { items, loading, error } = useSelector((state) => state.inventory);
 
   // Search & Filter State
@@ -85,15 +87,24 @@ export default function InventoryManagement({ currentUser }) {
     e.preventDefault();
     if (editingItem) {
       dispatch(updateInventoryItem({ id: editingItem.id, ...formData }));
+      showToast('Inventory item updated successfully!', 'success');
     } else {
       dispatch(addInventoryItem(formData));
+      showToast('Inventory item added successfully!', 'success');
     }
     handleCloseModal();
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Delete this stock ledger line?')) {
+  const handleDelete = async (id) => {
+    const isConfirmed = await confirm({
+      title: 'Delete Inventory Item',
+      message: 'Delete this stock ledger line?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
+    if (isConfirmed) {
       dispatch(deleteInventoryItem(id));
+      showToast('Inventory item deleted successfully!', 'success');
     }
   };
 
