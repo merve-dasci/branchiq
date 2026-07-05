@@ -20,16 +20,16 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
   const dispatch = useDispatch();
   const { showToast, confirm } = useNotification();
 
-  // State
+  // Arama çubuğu, rol ve şube filtreleme durumları
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [selectedBranchId, setSelectedBranchId] = useState('All');
 
-  // Modal State
+  // Ekleme/Düzenleme pop-up modal yönetimi
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
 
-  // Form State
+  // Form üzerindeki çalışan veri taslağı
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -39,31 +39,32 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
     status: 'Active'
   });
 
-  // Filter branches by region scope
+  // Seçili bölgeye ait şubeleri belirle
   const regionalBranches = selectedRegion === 'All' 
     ? branches 
     : branches.filter(b => b.region === selectedRegion);
 
   const regionalBranchIds = regionalBranches.map(b => b.id);
 
-  // Filtering Staff Directory list
+  // Çalışan listesini arama sorgusu, rol, şube ve bölgeye göre filtrele
   const filteredStaff = staff.filter(member => {
-    // Region scoping
+    // Bölge eşleşmesi kontrolü
     const matchesRegion = selectedRegion === 'All' || regionalBranchIds.includes(member.branchId);
     
-    // Branch filter
+    // Şube filtresi kontrolü
     const matchesBranch = selectedBranchId === 'All' || member.branchId === selectedBranchId;
     
-    // Role filter
+    // Rol filtresi kontrolü
     const matchesRole = roleFilter === 'All' || member.role === roleFilter;
 
-    // Search query match
+    // Arama kutusuna yazılan metin kontrolü (isim, e-posta veya rol)
     const text = `${member.name} ${member.email} ${member.role}`.toLowerCase();
     const matchesSearch = text.includes(searchQuery.toLowerCase());
 
     return matchesRegion && matchesBranch && matchesRole && matchesSearch;
   });
 
+  // Yeni çalışan ekleme modal penceresini açar ve formu sıfırlar
   const handleOpenAddModal = () => {
     setEditingMember(null);
     setFormData({
@@ -77,6 +78,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
     setIsModalOpen(true);
   };
 
+  // Mevcut çalışanın bilgilerini düzenlemek için düzenleme modalını açar
   const handleOpenEditModal = (member) => {
     setEditingMember(member);
     setFormData({
@@ -90,11 +92,13 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
     setIsModalOpen(true);
   };
 
+  // Modalı kapatıp düzenleme durumunu sıfırlar
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingMember(null);
   };
 
+  // Form elemanlarındaki değişiklikleri state üzerine yansıtır
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

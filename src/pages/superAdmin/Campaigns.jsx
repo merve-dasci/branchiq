@@ -18,7 +18,7 @@ export default function Campaigns({ announcements, currentUser }) {
   const dispatch = useDispatch();
   const { showToast, confirm } = useNotification();
 
-  // State
+  // Modalin açık/kapalı durumu ve form veri taslağı
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -27,6 +27,7 @@ export default function Campaigns({ announcements, currentUser }) {
     sender: ''
   });
 
+  // Duyuru ekleme modalını açar ve varsayılan gönderen bilgisini yazar
   const handleOpenModal = () => {
     setFormData({
       title: '',
@@ -37,10 +38,12 @@ export default function Campaigns({ announcements, currentUser }) {
     setIsModalOpen(true);
   };
 
+  // Duyuru modalını kapatır
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
 
+  // Form girdilerindeki değişiklikleri state üzerine yansıtır
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));

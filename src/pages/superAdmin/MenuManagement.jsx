@@ -16,15 +16,15 @@ export default function MenuManagement({ menuItems, currentUser }) {
   const dispatch = useDispatch();
   const { showToast, confirm } = useNotification();
 
-  // State
+  // Arama kelimesi ve kategori filtreleme durumu
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
 
-  // Modal State
+  // Ekleme ve güncelleme modal pencerelerinin açık/kapalı durumu
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
 
-  // Form State
+  // Form üzerindeki menü elemanı taslağı
   const [formData, setFormData] = useState({
     name: '',
     price: 0,
@@ -33,10 +33,10 @@ export default function MenuManagement({ menuItems, currentUser }) {
     isAvailable: true
   });
 
-  // Unique categories list helper
+  // Sistemde kullanılan temel menü kategorileri listesi
   const categories = ['All', 'Starter', 'Main Dish', 'Dessert', 'Beverage'];
 
-  // Filters
+  // Menü listesini arama girdisine ve seçilen kategoriye göre filtreler
   const filteredItems = menuItems.filter(item => {
     const matchesCategory = categoryFilter === 'All' || item.category === categoryFilter;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -44,6 +44,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
     return matchesCategory && matchesSearch;
   });
 
+  // Yeni menü öğesi ekleme modalını açar ve formu temizler
   const handleOpenAddModal = () => {
     setEditingItem(null);
     setFormData({
@@ -56,6 +57,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
     setIsModalOpen(true);
   };
 
+  // Mevcut bir menü elemanını düzenlemek için modalı açar ve formu doldurur
   const handleOpenEditModal = (item) => {
     setEditingItem(item);
     setFormData({
@@ -68,11 +70,13 @@ export default function MenuManagement({ menuItems, currentUser }) {
     setIsModalOpen(true);
   };
 
+  // Modalı kapatıp düzenleme durumunu iptal eder
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
   };
 
+  // Form girdilerindeki değişimleri takip eder ve sayısal değerleri sayıya dönüştürür
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({

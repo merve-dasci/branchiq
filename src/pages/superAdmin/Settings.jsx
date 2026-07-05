@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 export default function Settings({ currentUser }) {
+  // Giriş yapmış olan kullanıcının profil ayarları state yapısı
   const [profile, setProfile] = useState({
     name: currentUser?.name || 'Admin',
     email: currentUser?.email || '',
@@ -17,6 +18,7 @@ export default function Settings({ currentUser }) {
     regionScope: currentUser?.region || 'All'
   });
 
+  // Sistem bildirimleri ve parametre tetikleyicileri
   const [toggles, setToggles] = useState({
     emailAlerts: true,
     pushAlerts: false,
@@ -24,12 +26,15 @@ export default function Settings({ currentUser }) {
     strictSla: true
   });
 
+  // Kayıt işleminin başarıyla tamamlanıp tamamlanmadığı bilgisi
   const [savedStatus, setSavedStatus] = useState(false);
 
+  // Belirli bir parametre switch/toggle durumunu tersine çevirir
   const handleToggle = (key) => {
     setToggles(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Ayarları kaydeder ve kaydedildi mesajını 3 saniye ekranda tutar
   const handleSave = (e) => {
     e.preventDefault();
     setSavedStatus(true);
