@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext.jsx';
 
-export default function Navbar({ activeTab, selectedRegion, setSelectedRegion, currentUser }) {
+export default function Navbar({ activeTab, selectedRegion, setSelectedRegion, currentUser, isSimulating, setIsSimulating }) {
   const { language, setLanguage, t } = useLanguage();
   
   // Dynamic Title computation
@@ -57,6 +57,22 @@ export default function Navbar({ activeTab, selectedRegion, setSelectedRegion, c
 
       {/* 2. Controls and active profile summary */}
       <div className="flex items-center gap-5">
+        
+        {/* Simulator Toggle Button */}
+        {setIsSimulating && (
+          <button
+            id="simulation-toggle-btn"
+            onClick={() => setIsSimulating(!isSimulating)}
+            className={`flex items-center gap-1.5 border px-3 py-1.5 rounded-xl text-[9px] font-black uppercase transition-all cursor-pointer ${
+              isSimulating 
+                ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100' 
+                : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSimulating ? 'bg-rose-500 animate-ping' : 'bg-slate-400'}`} />
+            <span>{isSimulating ? t('simulation_active') : t('simulation_paused')}</span>
+          </button>
+        )}
         
         {/* Language Toggle Selector */}
         <button
