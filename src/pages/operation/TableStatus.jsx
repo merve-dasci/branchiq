@@ -101,9 +101,9 @@ export default function TableStatus({ currentUser }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {branchTables.map(table => {
             const isOccupied = table.status?.toLowerCase() === 'occupied';
-            const tableStatusTranslation = table.status === 'Available' ? (language === 'tr' ? 'Boş / Müsait' : 'Available') :
-                                           table.status === 'Occupied' ? (language === 'tr' ? 'Dolu' : 'Occupied') :
-                                           table.status === 'Reserved' ? (language === 'tr' ? 'Rezervli' : 'Reserved') :
+            const tableStatusTranslation = table.status?.toLowerCase() === 'available' ? (language === 'tr' ? 'Boş / Müsait' : 'Available') :
+                                           table.status?.toLowerCase() === 'occupied' ? (language === 'tr' ? 'Dolu' : 'Occupied') :
+                                           table.status?.toLowerCase() === 'reserved' ? (language === 'tr' ? 'Rezervli' : 'Reserved') :
                                            (language === 'tr' ? 'Temizlikte' : 'Cleaning');
             
             // Masaya atanan aktif siparişi bul

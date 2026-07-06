@@ -142,9 +142,9 @@ export default function Reservations({ currentUser }) {
     }
 
     // Masa durumlarını rezervasyona göre güncelle
-    if (formData.status === 'Confirmed' && selectedTableObj && (selectedTableObj.status === 'Available' || selectedTableObj.status === 'available')) {
+    if (formData.status === 'Confirmed' && selectedTableObj && selectedTableObj.status?.toLowerCase() === 'available') {
       dispatch(updateTable({ ...selectedTableObj, status: 'Reserved' }));
-    } else if (formData.status === 'Arrived' && selectedTableObj && selectedTableObj.status !== 'Occupied') {
+    } else if (formData.status === 'Arrived' && selectedTableObj && selectedTableObj.status?.toLowerCase() !== 'occupied') {
       dispatch(updateTable({ ...selectedTableObj, status: 'Occupied' }));
     }
 

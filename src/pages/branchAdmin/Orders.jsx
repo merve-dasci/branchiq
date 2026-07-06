@@ -28,8 +28,11 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
   const { t, language } = useLanguage();
   const { showToast, confirm } = useNotification();
 
+  const isBranchAdmin = currentUser?.role === 'branchAdmin';
+  const targetBranchId = isBranchAdmin ? (currentUser?.branchId || '') : 'All';
+
   // Arama, şube filtresi ve aktif sipariş kuyruk durumları
-  const [selectedBranchId, setSelectedBranchId] = useState('All');
+  const [selectedBranchId, setSelectedBranchId] = useState(targetBranchId);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeQueue, setActiveQueue] = useState('All');
   
@@ -76,11 +79,21 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
     }).length;
   };
 
+  // Toplam sipariş adetini getiren yardımcı fonksiyon
+  const getTotalCount = () => {
+    return orders.filter(o => {
+      const matchesRegion = selectedRegion === 'All' || regionalBranchIds.includes(o.branchId);
+      const matchesBranch = selectedBranchId === 'All' || o.branchId === selectedBranchId;
+      return matchesRegion && matchesBranch;
+    }).length;
+  };
+
   // Sipariş mutfak aşamasını ileriye taşıma mantığı
   const handleAdvanceStatus = (order) => {
     let nextStatus = order.status;
     if (order.status === 'Pending') nextStatus = 'Preparing';
-    else if (order.status === 'Preparing') nextStatus = 'Completed';
+    else if (order.status === 'Preparing') nextStatus = 'Ready';
+    else if (order.status === 'Ready') nextStatus = 'Completed';
 
     dispatch(updateOrder({
       ...order,
@@ -131,7 +144,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
 
   // Yeni Simüle Sipariş Formunu Hazırla ve Aç
   const handleOpenNewOrderModal = () => {
-    const defaultBranchId = regionalBranches.length > 0 ? regionalBranches[0].id : '';
+    const defaultBranchId = isBranchAdmin ? (currentUser?.branchId || '') : (regionalBranches.length > 0 ? regionalBranches[0].id : '');
     setNewOrderForm({
       branchId: defaultBranchId,
       customerName: '',
@@ -209,7 +222,7 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
       {/* Sipariş Durum Sayaç Butonları */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { id: 'All', label: t('all_orders'), count: orders.length, color: 'border-slate-300 text-slate-800 bg-white' },
+          { id: 'All', label: t('all_orders'), count: getTotalCount(), color: 'border-slate-300 text-slate-800 bg-white' },
           { id: 'Pending', label: t('pending_kitchen'), count: getQueueCount('Pending'), color: 'border-amber-300 text-amber-700 bg-amber-50/50' },
           { id: 'Preparing', label: t('preparing_food'), count: getQueueCount('Preparing'), color: 'border-blue-300 text-blue-700 bg-blue-50/50' },
           { id: 'Completed', label: t('dispatched_done'), count: getQueueCount('Completed'), color: 'border-emerald-300 text-emerald-700 bg-emerald-50/50' },
@@ -246,20 +259,22 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs">
-            <Filter size={12} className="text-slate-500" />
-            <select
-              id="order-branch-filter"
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="bg-transparent border-none font-bold text-slate-600 cursor-pointer focus:outline-hidden"
-            >
-              <option value="All">{t('all_branches')}</option>
-              {regionalBranches.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+          {!isBranchAdmin && (
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs">
+              <Filter size={12} className="text-slate-500" />
+              <select
+                id="order-branch-filter"
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="bg-transparent border-none font-bold text-slate-600 cursor-pointer focus:outline-hidden"
+              >
+                <option value="All">{t('all_branches')}</option>
+                {regionalBranches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Sipariş Ekleme Butonu */}
@@ -297,8 +312,10 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
 
                   const statusTranslation = order.status === 'Pending' ? (language === 'tr' ? 'Sıra Bekliyor' : 'Pending') :
                                             order.status === 'Preparing' ? (language === 'tr' ? 'Hazırlanıyor' : 'Preparing') :
+                                            order.status === 'Ready' ? (language === 'tr' ? 'Hazır' : 'Ready') :
                                             order.status === 'Completed' ? (language === 'tr' ? 'Teslim Edildi' : 'Completed') :
-                                            (language === 'tr' ? 'İptal Edildi' : 'Cancelled');
+                                            order.status === 'Cancelled' ? (language === 'tr' ? 'İptal Edildi' : 'Cancelled') :
+                                            order.status;
 
                   return (
                     <tr key={order.id} id={`order-row-${order.id}`} className="hover:bg-slate-50/50 transition-colors">
@@ -314,8 +331,10 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                         <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider ${
                           order.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
                           order.status === 'Preparing' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'Ready' ? 'bg-teal-100 text-teal-700' :
                           order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-rose-100 text-rose-700'
+                          order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' :
+                          'bg-slate-100 text-slate-700'
                         }`}>
                           {statusTranslation}
                         </span>
@@ -391,13 +410,17 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
                   <span className={`inline-block px-2 py-0.5 rounded-full font-extrabold text-[10px] uppercase ${
                     selectedOrder.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
                     selectedOrder.status === 'Preparing' ? 'bg-blue-100 text-blue-700' :
+                    selectedOrder.status === 'Ready' ? 'bg-teal-100 text-teal-700' :
                     selectedOrder.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-                    'bg-rose-100 text-rose-700'
+                    selectedOrder.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' :
+                    'bg-slate-100 text-slate-700'
                   }`}>
                     {selectedOrder.status === 'Pending' ? (language === 'tr' ? 'Bekliyor' : 'Pending') :
                      selectedOrder.status === 'Preparing' ? (language === 'tr' ? 'Hazırlanıyor' : 'Preparing') :
+                     selectedOrder.status === 'Ready' ? (language === 'tr' ? 'Hazır' : 'Ready') :
                      selectedOrder.status === 'Completed' ? (language === 'tr' ? 'Tamamlandı' : 'Completed') :
-                     (language === 'tr' ? 'İptal' : 'Cancelled')}
+                     selectedOrder.status === 'Cancelled' ? (language === 'tr' ? 'İptal' : 'Cancelled') :
+                     selectedOrder.status}
                   </span>
                 </div>
                 <div>
@@ -491,16 +514,25 @@ export default function Orders({ orders, branches, menuItems, selectedRegion, cu
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase block mb-1">{t('target_branch')}</label>
-                  <select
-                    required
-                    value={newOrderForm.branchId}
-                    onChange={(e) => setNewOrderForm(prev => ({ ...prev, branchId: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-hidden cursor-pointer"
-                  >
-                    {regionalBranches.map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
+                  {isBranchAdmin ? (
+                    <input
+                      disabled
+                      type="text"
+                      value={branches.find(b => b.id === currentUser?.branchId)?.name || ''}
+                      className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-3.5 py-2 text-xs focus:outline-hidden font-bold cursor-not-allowed"
+                    />
+                  ) : (
+                    <select
+                      required
+                      value={newOrderForm.branchId}
+                      onChange={(e) => setNewOrderForm(prev => ({ ...prev, branchId: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2 text-xs focus:outline-hidden cursor-pointer font-bold"
+                    >
+                      {regionalBranches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>

@@ -205,7 +205,7 @@
         }
       ],
       "totalAmount": 350,
-      "status": "Ready",
+      "status": "Cancelled",
       "customerName": "Jane Smith",
       "type": "Takeaway",
       "date": "2026-07-03",
@@ -374,6 +374,25 @@
       "type": "Dine-In",
       "date": "2026-07-05",
       "time": "17:46"
+    },
+    {
+      "id": "ord-1011",
+      "branchId": "b1",
+      "branchName": "BranchIQ Kadikoy",
+      "items": [
+        {
+          "menuItemId": "m6",
+          "name": "Matcha Latte",
+          "quantity": 1,
+          "price": 95
+        }
+      ],
+      "totalAmount": 95,
+      "status": "Pending",
+      "customerName": "Sinem Doğan",
+      "type": "Delivery",
+      "date": "2026-07-06",
+      "time": "03:18"
     }
   ],
   "staff": [
@@ -597,6 +616,18 @@
       "phone": "+90 505 444 5566",
       "status": "Confirmed",
       "branchId": "b1"
+    },
+    {
+      "id": "res-104",
+      "customerName": "David Hasselhof",
+      "phone": "",
+      "guests": 2,
+      "tableNumber": "Table 1",
+      "date": "2026-07-05",
+      "time": "19:00",
+      "status": "Confirmed",
+      "notes": "",
+      "branchId": "b1"
     }
   ],
   "tables": [
@@ -604,7 +635,7 @@
       "id": "t-1",
       "name": "Table 1",
       "capacity": 4,
-      "status": "available",
+      "status": "Available",
       "section": "Main Hall",
       "branchId": "b1"
     },
@@ -612,32 +643,24 @@
       "id": "t-2",
       "name": "Table 2",
       "capacity": 2,
-      "status": "reserved",
+      "status": "Occupied",
       "section": "Main Hall",
       "branchId": "b1",
       "currentOrderId": "ord-1002"
     },
     {
-      "id": "t-3",
-      "name": "Table 3",
-      "capacity": 6,
-      "status": "reserved",
-      "section": "VIP Saloon",
-      "branchId": "b1"
-    },
-    {
       "id": "t-4",
       "name": "Table 4",
       "capacity": 4,
-      "status": "Available",
-      "section": "Garden Patio",
+      "status": "cleaning",
+      "section": "VIP Saloon",
       "branchId": "b1"
     },
     {
       "id": "t-5",
       "name": "Table 5",
       "capacity": 4,
-      "status": "available",
+      "status": "Occupied",
       "section": "Garden Patio",
       "branchId": "b1"
     },
@@ -645,9 +668,25 @@
       "id": "t-6",
       "name": "Table 6",
       "capacity": 8,
-      "status": "available",
+      "status": "Available",
       "section": "VIP Saloon",
       "branchId": "b2"
+    },
+    {
+      "id": "t-7",
+      "name": "Masa 6",
+      "capacity": 4,
+      "status": "Available",
+      "section": "Main Hall",
+      "branchId": "b1"
+    },
+    {
+      "id": "t-8",
+      "name": "Masa 3",
+      "capacity": 4,
+      "status": "Available",
+      "section": "Main Hall",
+      "branchId": "b1"
     }
   ],
   "campaigns": [
