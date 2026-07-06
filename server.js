@@ -17,6 +17,27 @@ const DB_FILE = path.join(process.cwd(), "db.json");
 // Gelen isteklerin gövdesindeki (body) JSON verilerini okuyabilmek için express.json ara katmanını ekle
 app.use(express.json());
 
+// API İsteklerini sıraya sokan (request queue) ara katman yazılımı
+// Dosya tabanlı veritabanında eş zamanlı yazma (race condition) ve dosya bozulmalarını önler
+let apiQueue = Promise.resolve();
+app.use("/api", (req, res, next) => {
+  apiQueue = apiQueue.then(() => {
+    return new Promise((resolve) => {
+      // res.end çağrısını yakalayarak isteğin bittiğini tespit et ve sıradaki isteği başlat
+      const originalEnd = res.end;
+      res.end = function (...args) {
+        originalEnd.apply(this, args);
+        resolve();
+      };
+      
+      // Bağlantı kopması veya hata durumlarını da ele al
+      res.on("close", resolve);
+      
+      next();
+    });
+  });
+});
+
 // Veritabanı dosyasını (db.json) okuyup JSON nesnesine çeviren yardımcı fonksiyon
 async function readDB() {
   try {
@@ -39,21 +60,25 @@ async function readDB() {
       reports: parsed.reports || []
     };
   } catch (error) {
-    // Dosya okuma veya parse hatası oluşursa konsola yaz ve boş bir şablon dön
-    console.error("Error reading db.json, returning empty template", error);
-    return { 
-      users: [], 
-      branches: [], 
-      menuItems: [], 
-      orders: [], 
-      staff: [], 
-      announcements: [],
-      inventory: [],
-      reservations: [],
-      tables: [],
-      campaigns: [],
-      reports: []
-    };
+    if (error.code === 'ENOENT') {
+      // db.json dosya bulunamazsa boş şablon döndür (ilk oluşturma için)
+      return { 
+        users: [], 
+        branches: [], 
+        menuItems: [], 
+        orders: [], 
+        staff: [], 
+        announcements: [],
+        inventory: [],
+        reservations: [],
+        tables: [],
+        campaigns: [],
+        reports: []
+      };
+    }
+    // JSON ayrıştırma/format veya diğer kritik hatalarda hata fırlat (veri kaybını önlemek için)
+    console.error("Critical error reading db.json (corrupted data):", error);
+    throw error;
   }
 }
 
@@ -193,8 +218,12 @@ app.get("/api/orders", async (req, res) => {
 // Yeni Sipariş Kaydet
 app.post("/api/orders", async (req, res) => {
   const db = await readDB();
-  // Sipariş ID'sini "ord-{dizi_uzunlugu}" olarak ata (Örn: ord-1011)
-  const newOrder = { id: "ord-" + (1000 + db.orders.length + 1), ...req.body };
+  // En yüksek sayısal sipariş ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.orders.reduce((max, o) => {
+    const num = parseInt(o.id.replace('ord-', '')) || 0;
+    return num > max ? num : max;
+  }, 1000);
+  const newOrder = { id: "ord-" + (maxId + 1), ...req.body };
   db.orders.push(newOrder);
   await writeDB(db);
   res.status(201).json(newOrder);
@@ -274,7 +303,12 @@ app.get("/api/announcements", async (req, res) => {
 // Yeni Duyuru Ekle (Duyuru panosunda en üstte görünmesi için unshift ile dizinin başına ekler)
 app.post("/api/announcements", async (req, res) => {
   const db = await readDB();
-  const newAnn = { id: "a" + (db.announcements.length + 1), ...req.body };
+  // En yüksek sayısal duyuru ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.announcements.reduce((max, a) => {
+    const num = parseInt(a.id.replace('a', '')) || 0;
+    return num > max ? num : max;
+  }, 0);
+  const newAnn = { id: "a" + (maxId + 1), ...req.body };
   db.announcements.unshift(newAnn);
   await writeDB(db);
   res.status(201).json(newAnn);
@@ -298,7 +332,12 @@ app.get("/api/inventory", async (req, res) => {
 // Yeni Envanter Kalemi Ekle
 app.post("/api/inventory", async (req, res) => {
   const db = await readDB();
-  const newItem = { id: "inv-" + (db.inventory.length + 1), ...req.body };
+  // En yüksek envanter ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.inventory.reduce((max, i) => {
+    const num = parseInt(i.id.replace('inv-', '')) || 0;
+    return num > max ? num : max;
+  }, 0);
+  const newItem = { id: "inv-" + (maxId + 1), ...req.body };
   db.inventory.push(newItem);
   await writeDB(db);
   res.status(201).json(newItem);
@@ -335,7 +374,12 @@ app.get("/api/reservations", async (req, res) => {
 // Yeni Rezervasyon Kaydet
 app.post("/api/reservations", async (req, res) => {
   const db = await readDB();
-  const newRes = { id: "res-" + (100 + db.reservations.length + 1), ...req.body };
+  // En yüksek rezervasyon ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.reservations.reduce((max, r) => {
+    const num = parseInt(r.id.replace('res-', '')) || 0;
+    return num > max ? num : max;
+  }, 100);
+  const newRes = { id: "res-" + (maxId + 1), ...req.body };
   db.reservations.push(newRes);
   await writeDB(db);
   res.status(201).json(newRes);
@@ -372,7 +416,12 @@ app.get("/api/tables", async (req, res) => {
 // Yeni Masa Tanımla
 app.post("/api/tables", async (req, res) => {
   const db = await readDB();
-  const newTable = { id: "t-" + (db.tables.length + 1), ...req.body };
+  // En yüksek masa ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.tables.reduce((max, t) => {
+    const num = parseInt(t.id.replace('t-', '')) || 0;
+    return num > max ? num : max;
+  }, 0);
+  const newTable = { id: "t-" + (maxId + 1), ...req.body };
   db.tables.push(newTable);
   await writeDB(db);
   res.status(201).json(newTable);
@@ -407,7 +456,12 @@ app.get("/api/campaigns", async (req, res) => {
 
 app.post("/api/campaigns", async (req, res) => {
   const db = await readDB();
-  const newCamp = { id: "camp-" + (db.campaigns.length + 1), ...req.body };
+  // En yüksek kampanya ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.campaigns.reduce((max, c) => {
+    const num = parseInt(c.id.replace('camp-', '')) || 0;
+    return num > max ? num : max;
+  }, 0);
+  const newCamp = { id: "camp-" + (maxId + 1), ...req.body };
   db.campaigns.push(newCamp);
   await writeDB(db);
   res.status(201).json(newCamp);
@@ -440,7 +494,12 @@ app.get("/api/reports", async (req, res) => {
 
 app.post("/api/reports", async (req, res) => {
   const db = await readDB();
-  const newReport = { id: "rep-" + (db.reports.length + 1), ...req.body };
+  // En yüksek rapor ID'sini hesapla (ID çakışmalarını önlemek için)
+  const maxId = db.reports.reduce((max, r) => {
+    const num = parseInt(r.id.replace('rep-', '')) || 0;
+    return num > max ? num : max;
+  }, 0);
+  const newReport = { id: "rep-" + (maxId + 1), ...req.body };
   db.reports.push(newReport);
   await writeDB(db);
   res.status(201).json(newReport);

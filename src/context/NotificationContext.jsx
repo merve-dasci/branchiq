@@ -102,7 +102,7 @@ export function NotificationProvider({ children }) {
               </button>
               <button
                 onClick={confirmConfig.onConfirm}
-                className="bg-red-650 hover:bg-red-700 text-white font-semibold text-xs px-4.5 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-red-500/10"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs px-4.5 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-red-500/10"
               >
                 {confirmConfig.confirmText}
               </button>

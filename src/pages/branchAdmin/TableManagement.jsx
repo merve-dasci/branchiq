@@ -7,9 +7,10 @@ import {
   Trash2, 
   Users, 
   Edit2, 
-  X
+  X,
+  Clock
 } from 'lucide-react';
-// Redux masa yükleme, ekleme ve güncelleme eylemlerini import et
+// Redux masa ve sipariş yükleme, ekleme ve güncelleme eylemlerini import et
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   fetchTables, 
@@ -17,6 +18,7 @@ import {
   updateTable, 
   deleteTable 
 } from '../../features/tables/tablesSlice.js';
+import { fetchOrders } from '../../features/orders/ordersSlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
 // Bildirim ve özel onay modali kancasını içe aktar
@@ -27,8 +29,9 @@ export default function TableManagement({ currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
   const { showToast, confirm } = useNotification();
-  // Redux store'dan masaları al
+  // Redux store'dan masaları ve siparişleri al
   const { items, loading, error } = useSelector((state) => state.tables);
+  const { items: orders } = useSelector((state) => state.orders);
 
   // Modal ve düzenleme durum değişkenleri
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,9 +45,10 @@ export default function TableManagement({ currentUser }) {
     section: 'Main Hall'
   });
 
-  // Sayfa açıldığında masaları sunucudan çek
+  // Sayfa açıldığında masaları ve siparişleri sunucudan çek
   useEffect(() => {
     dispatch(fetchTables());
+    dispatch(fetchOrders());
   }, [dispatch]);
 
   // Yeni Masa Ekleme Modalini Aç
@@ -90,10 +94,10 @@ export default function TableManagement({ currentUser }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingTable) {
-      dispatch(updateTable({ id: editingTable.id, ...formData }));
+      dispatch(updateTable({ ...editingTable, ...formData }));
       showToast(language === 'tr' ? 'Masa başarıyla güncellendi!' : 'Table updated successfully!', 'success');
     } else {
-      dispatch(addTable(formData));
+      dispatch(addTable({ ...formData, branchId: currentUser?.branchId }));
       showToast(language === 'tr' ? 'Masa başarıyla eklendi!' : 'Table added successfully!', 'success');
     }
     handleCloseModal();
@@ -113,14 +117,25 @@ export default function TableManagement({ currentUser }) {
     }
   };
 
-  // Masa Doluluk Durumunu Hızlı Değiştir (Boş / Dolu)
-  const handleStatusToggle = (table) => {
-    const nextStatus = table.status === 'Available' ? 'Occupied' : 'Available';
-    dispatch(updateTable({ ...table, status: nextStatus }));
+  // Masanın doluluk durumunu değiştir (Boş, Dolu, Rezervli, Temizleniyor)
+  const handleStatusChange = (table, newStatus) => {
+    dispatch(updateTable({ ...table, status: newStatus }));
+  };
+
+  // Duruma göre CSS renk sınıfı döndüren yardımcı metot
+  const getStatusBadgeClass = (status) => {
+    const s = status?.toLowerCase();
+    if (s === 'occupied') return 'bg-rose-50 border-rose-100 text-rose-700';
+    if (s === 'reserved') return 'bg-amber-50 border-amber-100 text-amber-700';
+    if (s === 'cleaning') return 'bg-blue-50 border-blue-100 text-blue-700';
+    return 'bg-emerald-50 border-emerald-100 text-emerald-700';
   };
 
   // Şube bazlı masaları filtrele
-  const myBranchTables = items.filter(t => t.branchId === currentUser?.branchId || !t.branchId);
+  const myBranchTables = items.filter(t => t.branchId === currentUser?.branchId);
+
+  // Siparişleri şubeye göre filtrele
+  const branchOrders = orders.filter(o => o.branchId === currentUser?.branchId);
 
   return (
     <div id="table-management-panel" className="p-8 space-y-6 animate-fade-in">
@@ -140,24 +155,30 @@ export default function TableManagement({ currentUser }) {
       </div>
 
       {/* Masa Kapasite Sayaç Kartları */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-6">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('total_seating_slots')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">{myBranchTables.length}</h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">{t('available_tables')}</p>
           <h4 className="text-2xl font-black text-emerald-600 mt-1">
-            {myBranchTables.filter(t => t.status === 'Available').length}
+            {myBranchTables.filter(t => t.status?.toLowerCase() === 'available').length}
           </h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{t('occupied_tables')}</p>
           <h4 className="text-2xl font-black text-rose-600 mt-1">
-            {myBranchTables.filter(t => t.status === 'Occupied').length}
+            {myBranchTables.filter(t => t.status?.toLowerCase() === 'occupied').length}
           </h4>
         </div>
-        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-2xl-xs">
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
+          <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{t('tables_in_cleaning')}</p>
+          <h4 className="text-2xl font-black text-blue-600 mt-1">
+            {myBranchTables.filter(t => t.status?.toLowerCase() === 'cleaning').length}
+          </h4>
+        </div>
+        <div className="bg-white p-5 border border-slate-200 rounded-2xl shadow-xs">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('consolidated_seating_cap')}</p>
           <h4 className="text-2xl font-black text-slate-900 mt-1">
             {myBranchTables.reduce((sum, t) => sum + (t.capacity || 0), 0)} {language === 'tr' ? 'koltuk' : 'seats'}
@@ -167,65 +188,104 @@ export default function TableManagement({ currentUser }) {
 
       {/* Masaların Bento Grid Düzeni */}
       {myBranchTables.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {myBranchTables.map(table => {
-            const isOccupied = table.status === 'Occupied';
+            const isOccupied = table.status?.toLowerCase() === 'occupied';
+            const tableStatusTranslation = table.status?.toLowerCase() === 'available' ? (language === 'tr' ? 'Boş / Müsait' : 'Available') :
+                                           table.status?.toLowerCase() === 'occupied' ? (language === 'tr' ? 'Dolu' : 'Occupied') :
+                                           table.status?.toLowerCase() === 'reserved' ? (language === 'tr' ? 'Rezervli' : 'Reserved') :
+                                           (language === 'tr' ? 'Temizlikte' : 'Cleaning');
+            
             const sectionTranslation = table.section === 'Main Hall' ? (language === 'tr' ? 'Ana Salon' : 'Main Hall') :
                                        table.section === 'Garden Patio' ? (language === 'tr' ? 'Bahçe / Veranda' : 'Garden Patio') :
                                        table.section === 'VIP Saloon' ? (language === 'tr' ? 'VIP Salon' : 'VIP Saloon') :
                                        table.section === 'Bar Desk' ? (language === 'tr' ? 'Bar / Tezgah' : 'Bar Desk') : (table.section || 'Main');
 
+            // Masaya atanan aktif siparişi bul
+            const activeOrder = branchOrders.find(o => 
+              o.status?.toLowerCase() !== 'completed' && 
+              o.status?.toLowerCase() !== 'cancelled' && 
+              (o.tableNumber === table.name || o.id === table.currentOrderId)
+            );
+
             return (
               <div 
                 key={table.id}
-                className={`p-5 rounded-2xl border transition-all relative flex flex-col justify-between h-40 ${
-                  isOccupied 
-                    ? 'bg-rose-50/30 border-rose-200 shadow-rose-100/10' 
-                    : 'bg-white border-slate-200 hover:border-slate-300'
-                }`}
+                className="p-5 rounded-2xl border transition-all flex flex-col justify-between min-h-[240px] bg-white border-slate-200 hover:border-slate-350 hover:shadow-md"
               >
-                {/* Kontrol Butonları ve Masa Etiketi */}
-                <div className="flex justify-between items-start">
+                {/* Masa Başlık, Durum Badge ve Kontroller */}
+                <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
                   <div>
-                    <h4 className="text-sm font-black text-slate-900">{language === 'tr' ? table.name.replace('Table', 'Masa') : table.name}</h4>
+                    <div className="flex items-center gap-1">
+                      <h4 className="text-sm font-black text-slate-900 truncate max-w-[80px]">{language === 'tr' ? table.name.replace('Table', 'Masa') : table.name}</h4>
+                      <div className="flex gap-0.5">
+                        <button
+                          onClick={() => handleOpenEditModal(table)}
+                          className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-md cursor-pointer"
+                          title={t('edit') || 'Edit'}
+                        >
+                          <Edit2 size={10} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(table.id)}
+                          className="p-0.5 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-md cursor-pointer"
+                          title={t('delete') || 'Delete'}
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
                     <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">{sectionTranslation}</p>
                   </div>
-                  
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleOpenEditModal(table)}
-                      className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-50 rounded-md cursor-pointer"
-                      title={t('edit') || 'Edit'}
-                    >
-                      <Edit2 size={10} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(table.id)}
-                      className="p-1 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-md cursor-pointer"
-                      title={t('delete') || 'Delete'}
-                    >
-                      <Trash2 size={10} />
-                    </button>
+                  <span className={`px-2 py-0.5 border rounded-md text-[9px] font-black uppercase whitespace-nowrap ${getStatusBadgeClass(table.status)}`}>
+                    {tableStatusTranslation}
+                  </span>
+                </div>
+
+                {/* Masa Kapasite ve Sipariş Detayları */}
+                <div className="py-3 flex-1 flex flex-col justify-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
+                    <Users size={13} className="text-slate-400" />
+                    <span>{t('capacity')}: {table.capacity} {language === 'tr' ? 'Kişi' : 'Guests'}</span>
                   </div>
+
+                  {/* Masa doluysa aktif siparişi göster */}
+                  {isOccupied && (
+                    <div className="bg-rose-50/40 border border-rose-100 rounded-xl p-2.5 text-[10px] space-y-1">
+                      <span className="font-extrabold text-rose-700 uppercase text-[8px] tracking-wider block">{language === 'tr' ? 'Aktif Sipariş Detayları:' : 'Active Order Details:'}</span>
+                      {activeOrder ? (
+                        <>
+                          <div className="flex justify-between font-bold text-slate-700">
+                            <span className="truncate max-w-[80px]">{activeOrder.id}</span>
+                            <span className="text-rose-600">${activeOrder.totalAmount}</span>
+                          </div>
+                          <p className="text-slate-500 font-medium truncate">{language === 'tr' ? 'Müşteri' : 'Guest'}: {activeOrder.customerName}</p>
+                          <div className="flex items-center gap-1 text-[9px] text-slate-400">
+                            <Clock size={10} />
+                            <span>{language === 'tr' ? 'Durum' : 'Status'}: {activeOrder.status === 'Pending' ? t('pending') : t('preparing')}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-slate-400 font-medium italic">{language === 'tr' ? 'Aktif sipariş bulunamadı.' : 'No active order linked.'}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Masa Kişi Kapasitesi */}
-                <div className="flex items-center gap-1.5 py-3">
-                  <Users size={14} className={isOccupied ? 'text-rose-500' : 'text-slate-400'} />
-                  <span className="text-xs font-black text-slate-700">{table.capacity} {t('seats')}</span>
+                {/* Hızlı Durum Değiştirme Seçicisi */}
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <label className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block">{t('change_status')}</label>
+                  <select
+                    value={table.status?.toLowerCase() || 'available'}
+                    onChange={(e) => handleStatusChange(table, e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-2.5 py-1.5 text-[10px] font-black focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="available">🟢 {language === 'tr' ? 'Boş / Müsait' : 'Available'}</option>
+                    <option value="occupied">🔴 {language === 'tr' ? 'Dolu' : 'Occupied'}</option>
+                    <option value="reserved">🟡 {language === 'tr' ? 'Rezervli' : 'Reserved'}</option>
+                    <option value="cleaning">🔵 {language === 'tr' ? 'Temizlikte' : 'Cleaning'}</option>
+                  </select>
                 </div>
-
-                {/* Doluluk Durumu Değiştirme Butonu */}
-                <button
-                  onClick={() => handleStatusToggle(table)}
-                  className={`w-full py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                    isOccupied 
-                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs' 
-                      : 'bg-slate-100 hover:bg-slate-150 text-slate-700'
-                  }`}
-                >
-                  {isOccupied ? t('occupied') : t('mark_occupied')}
-                </button>
               </div>
             );
           })}
