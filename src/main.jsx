@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { store } from './app/store.js';
 import { LanguageProvider } from './context/LanguageContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 import App from './App.jsx';
 import './index.css';
 
@@ -12,7 +13,9 @@ createRoot(document.getElementById('root')).render(
     <Provider store={store}>
       <LanguageProvider>
         <BrowserRouter>
-          <App />
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
         </BrowserRouter>
       </LanguageProvider>
     </Provider>

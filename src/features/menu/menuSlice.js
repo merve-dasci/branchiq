@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { menuApi } from '../../services/api.js';
 
+// Menü listesindeki tüm yemek/içecek öğelerini çeker
 export const fetchMenuItems = createAsyncThunk(
   'menu/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -13,6 +14,7 @@ export const fetchMenuItems = createAsyncThunk(
   }
 );
 
+// Menüye yeni bir yemek veya içecek ekler
 export const addMenuItem = createAsyncThunk(
   'menu/add',
   async (itemData, { rejectWithValue }) => {
@@ -25,6 +27,7 @@ export const addMenuItem = createAsyncThunk(
   }
 );
 
+// Mevcut bir menü öğesini günceller (fiyat, açıklama, stok durumu vb.)
 export const updateMenuItem = createAsyncThunk(
   'menu/update',
   async (itemData, { rejectWithValue }) => {
@@ -37,6 +40,7 @@ export const updateMenuItem = createAsyncThunk(
   }
 );
 
+// Belirtilen ID'deki menü öğesini kalıcı olarak siler
 export const deleteMenuItem = createAsyncThunk(
   'menu/delete',
   async (id, { rejectWithValue }) => {
@@ -49,6 +53,7 @@ export const deleteMenuItem = createAsyncThunk(
   }
 );
 
+// Menü durumu başlangıç değerleri
 const menuSlice = createSlice({
   name: 'menu',
   initialState: {
@@ -59,7 +64,7 @@ const menuSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
+      // Menü öğelerini listeleme
       .addCase(fetchMenuItems.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -72,7 +77,7 @@ const menuSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Add
+      // Yeni menü öğesi ekleme
       .addCase(addMenuItem.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -85,7 +90,7 @@ const menuSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update
+      // Menü öğesi güncelleme
       .addCase(updateMenuItem.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -101,7 +106,7 @@ const menuSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete
+      // Menü öğesi silme
       .addCase(deleteMenuItem.pending, (state) => {
         state.loading = true;
         state.error = null;

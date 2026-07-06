@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 // Panel simgelerini Lucide React paketinden yükle
 import { 
-  Settings as SettingsIcon, 
   User, 
   Bell, 
   Globe, 
@@ -10,10 +9,13 @@ import {
 } from 'lucide-react';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
+// Bildirim kancasını içe aktar
+import { useNotification } from '../../context/NotificationContext.jsx';
 
 // Süper Admin Sistem Ayarları Bileşeni
 export default function Settings({ currentUser }) {
   const { t, language, setLanguage } = useLanguage();
+  const { showToast } = useNotification();
 
   // Profil veri durum yönetimi
   const [profile, setProfile] = useState({
@@ -52,6 +54,7 @@ export default function Settings({ currentUser }) {
   const handleSave = (e) => {
     e.preventDefault();
     setSavedStatus(true);
+    showToast(language === 'tr' ? 'Ayarlar başarıyla kaydedildi!' : 'Settings saved successfully!', 'success');
     setTimeout(() => setSavedStatus(false), 3000);
   };
 

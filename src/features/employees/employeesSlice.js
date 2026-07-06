@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { employeesApi } from '../../services/api.js';
 
+// Sistemdeki tüm personel verilerini API üzerinden çeker
 export const fetchEmployees = createAsyncThunk(
   'employees/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -13,6 +14,7 @@ export const fetchEmployees = createAsyncThunk(
   }
 );
 
+// Yeni çalışan ekleme isteği gönderir
 export const addEmployee = createAsyncThunk(
   'employees/add',
   async (employeeData, { rejectWithValue }) => {
@@ -25,6 +27,7 @@ export const addEmployee = createAsyncThunk(
   }
 );
 
+// Mevcut çalışan bilgilerini güncelleme isteği gönderir
 export const updateEmployee = createAsyncThunk(
   'employees/update',
   async (employeeData, { rejectWithValue }) => {
@@ -37,6 +40,7 @@ export const updateEmployee = createAsyncThunk(
   }
 );
 
+// Belirtilen ID'deki çalışanın işine son verme / kaydını silme
 export const deleteEmployee = createAsyncThunk(
   'employees/delete',
   async (id, { rejectWithValue }) => {
@@ -49,12 +53,13 @@ export const deleteEmployee = createAsyncThunk(
   }
 );
 
-// Backward compatibility exports for existing components
+// Geriye dönük uyumluluk için thunk takma adları
 export const fetchStaff = fetchEmployees;
 export const addStaff = addEmployee;
 export const updateStaff = updateEmployee;
 export const deleteStaff = deleteEmployee;
 
+// Çalışan verileri için başlangıç state yapısı
 const employeesSlice = createSlice({
   name: 'employees',
   initialState: {
@@ -65,7 +70,7 @@ const employeesSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch
+      // Tüm çalışanları getirme işlemi
       .addCase(fetchEmployees.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -78,7 +83,7 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Add
+      // Yeni çalışan ekleme işlemi
       .addCase(addEmployee.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -91,7 +96,7 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Update
+      // Çalışan bilgilerini güncelleme işlemi
       .addCase(updateEmployee.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -107,7 +112,7 @@ const employeesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Delete
+      // Çalışan silme / işten çıkarma işlemi
       .addCase(deleteEmployee.pending, (state) => {
         state.loading = true;
         state.error = null;

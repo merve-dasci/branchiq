@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { campaignsApi, announcementsApi } from '../../services/api.js';
 
-// Campaigns Async Thunks
+// Kampanyaların tamamını API üzerinden çeker
 export const fetchCampaigns = createAsyncThunk(
   'campaigns/fetchAll',
   async (_, { rejectWithValue }) => {
@@ -14,6 +14,7 @@ export const fetchCampaigns = createAsyncThunk(
   }
 );
 
+// Yeni kampanya ekleme isteği gönderir
 export const addCampaign = createAsyncThunk(
   'campaigns/add',
   async (campData, { rejectWithValue }) => {
@@ -26,6 +27,7 @@ export const addCampaign = createAsyncThunk(
   }
 );
 
+// Kampanya detaylarını veya durumunu günceller
 export const updateCampaign = createAsyncThunk(
   'campaigns/update',
   async (campData, { rejectWithValue }) => {
@@ -38,6 +40,7 @@ export const updateCampaign = createAsyncThunk(
   }
 );
 
+// Kampanyayı listeden tamamen siler
 export const deleteCampaign = createAsyncThunk(
   'campaigns/delete',
   async (id, { rejectWithValue }) => {
@@ -50,7 +53,7 @@ export const deleteCampaign = createAsyncThunk(
   }
 );
 
-// Announcements Async Thunks (Housed under campaignsSlice for compatibility and architecture)
+// Duyuruların (Notice board) tamamını çeker
 export const fetchAnnouncements = createAsyncThunk(
   'campaigns/fetchAnnouncements',
   async (_, { rejectWithValue }) => {
@@ -63,6 +66,7 @@ export const fetchAnnouncements = createAsyncThunk(
   }
 );
 
+// Yeni duyuru ekleyip tüm şubelere yayınlar
 export const addAnnouncement = createAsyncThunk(
   'campaigns/addAnnouncement',
   async (annData, { rejectWithValue }) => {
@@ -75,6 +79,7 @@ export const addAnnouncement = createAsyncThunk(
   }
 );
 
+// Yayındaki bir duyuruyu kaldırır/siler
 export const deleteAnnouncement = createAsyncThunk(
   'campaigns/deleteAnnouncement',
   async (id, { rejectWithValue }) => {
@@ -87,6 +92,7 @@ export const deleteAnnouncement = createAsyncThunk(
   }
 );
 
+// Kampanya ve duyuru durum yönetimi başlangıç değerleri
 const campaignsSlice = createSlice({
   name: 'campaigns',
   initialState: {
@@ -98,7 +104,7 @@ const campaignsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Campaigns Fetch
+      // Kampanyaları listeleme işlemleri
       .addCase(fetchCampaigns.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -111,7 +117,7 @@ const campaignsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Campaigns Add
+      // Kampanya ekleme işlemleri
       .addCase(addCampaign.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -124,7 +130,7 @@ const campaignsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Campaigns Update
+      // Kampanya güncelleme işlemleri
       .addCase(updateCampaign.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -140,7 +146,7 @@ const campaignsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Campaigns Delete
+      // Kampanya silme işlemleri
       .addCase(deleteCampaign.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -154,7 +160,7 @@ const campaignsSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Announcements Fetch
+      // Duyuruları listeleme işlemleri
       .addCase(fetchAnnouncements.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -167,7 +173,7 @@ const campaignsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Announcements Add
+      // Duyuru yayınlama işlemleri
       .addCase(addAnnouncement.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -180,7 +186,7 @@ const campaignsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Announcements Delete
+      // Duyuru silme işlemleri
       .addCase(deleteAnnouncement.pending, (state) => {
         state.loading = true;
         state.error = null;
