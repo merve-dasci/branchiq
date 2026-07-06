@@ -164,14 +164,6 @@
       "popular": false,
       "description": "Ceremonial grade Japanese matcha with warm oat milk",
       "image": "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=400"
-    },
-    {
-      "id": "m7",
-      "name": "makarna",
-      "price": 50,
-      "category": "Main Dish",
-      "description": "jdjdcj",
-      "isAvailable": true
     }
   ],
   "orders": [
@@ -462,6 +454,26 @@
       "phone": "+90 555 777 8899",
       "email": "elif.aksu@branchiq.com",
       "status": "Active"
+    },
+    {
+      "id": "s7",
+      "name": "ali",
+      "email": "ali@gmail.com",
+      "phone": "12355",
+      "role": "Cashier",
+      "branchId": "b1",
+      "status": "Active",
+      "branchName": "BranchIQ Kadikoy"
+    },
+    {
+      "id": "s8",
+      "name": "ahmet",
+      "email": "ahmet@jd",
+      "phone": "14515",
+      "role": "Host",
+      "branchId": "b1",
+      "status": "Active",
+      "branchName": "BranchIQ Kadikoy"
     }
   ],
   "announcements": [
@@ -493,62 +505,63 @@
   "inventory": [
     {
       "id": "inv-1",
-      "name": "Coffee Beans (Arabica)",
-      "quantity": 8,
-      "unit": "kg",
+      "name": "Truffle Burger",
+      "quantity": 120,
+      "unit": "pcs",
       "minLimit": 15,
-      "branchName": "BranchIQ Kadikoy",
-      "branchId": "b1",
-      "supplier": "Global Bean Distributors"
+      "branchName": "All Branches",
+      "branchId": "All",
+      "supplier": "Menu Integration"
     },
     {
       "id": "inv-2",
-      "name": "Fresh Milk",
-      "quantity": 45,
-      "unit": "liters",
-      "minLimit": 20,
-      "branchName": "BranchIQ Kadikoy",
-      "branchId": "b1",
-      "supplier": "Daily Dairy Farm"
+      "name": "Crispy Chicken Bao",
+      "quantity": 80,
+      "unit": "pcs",
+      "minLimit": 10,
+      "branchName": "All Branches",
+      "branchId": "All",
+      "supplier": "Menu Integration"
     },
     {
       "id": "inv-3",
-      "name": "Beef Patties (150g)",
-      "quantity": 120,
+      "name": "Quinoa Avocado Salad",
+      "quantity": 45,
       "unit": "pcs",
-      "minLimit": 50,
-      "branchName": "BranchIQ Kadikoy",
-      "branchId": "b1",
-      "supplier": "Prime Meats Co."
+      "minLimit": 8,
+      "branchName": "All Branches",
+      "branchId": "All",
+      "supplier": "Menu Integration"
     },
     {
       "id": "inv-4",
-      "name": "Brioche Buns",
-      "quantity": 18,
+      "name": "Fettuccine Alfredo",
+      "quantity": 90,
       "unit": "pcs",
-      "minLimit": 60,
-      "branchName": "BranchIQ Kadikoy",
-      "branchId": "b1",
-      "supplier": "Artisan Bakery"
+      "minLimit": 12,
+      "branchName": "All Branches",
+      "branchId": "All",
+      "supplier": "Menu Integration"
     },
     {
       "id": "inv-5",
-      "name": "Cheddar Cheese Slice",
-      "quantity": 300,
+      "name": "San Sebastian Cheesecake",
+      "quantity": 55,
       "unit": "pcs",
-      "minLimit": 100,
-      "branchName": "BranchIQ Besiktas",
-      "branchId": "b2",
-      "supplier": "Daily Dairy Farm"
+      "minLimit": 10,
+      "branchName": "All Branches",
+      "branchId": "All",
+      "supplier": "Menu Integration"
     },
     {
       "id": "inv-6",
-      "name": "köfte",
-      "quantity": 20,
-      "unit": "20kg",
-      "minLimit": 10,
+      "name": "Matcha Latte",
+      "quantity": 180,
+      "unit": "pcs",
+      "minLimit": 20,
       "branchName": "All Branches",
-      "supplier": ""
+      "branchId": "All",
+      "supplier": "Menu Integration"
     }
   ],
   "reservations": [

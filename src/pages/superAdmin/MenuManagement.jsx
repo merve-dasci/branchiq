@@ -11,8 +11,9 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 // Redux menü ekleme, güncelleme ve silme thunk eylemlerini import et
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addMenuItem, updateMenuItem, deleteMenuItem } from '../../features/menu/menuSlice.js';
+import { addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../../features/inventory/inventorySlice.js';
 // Çoklu dil kancasını içe aktar
 import { useLanguage } from '../../context/LanguageContext.jsx';
 // Bildirim ve özel onay modali kancasını içe aktar
@@ -23,6 +24,9 @@ export default function MenuManagement({ menuItems, currentUser }) {
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
   const { showToast, confirm } = useNotification();
+
+  // Envanter listesini seç
+  const { items: inventoryItems } = useSelector((state) => state.inventory);
 
   // Arama filtresi ve kategori filtresi durum yönetimi
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,13 +40,13 @@ export default function MenuManagement({ menuItems, currentUser }) {
   const [formData, setFormData] = useState({
     name: '',
     price: 0,
-    category: 'Main Dish',
+    category: 'Main Course',
     description: '',
     isAvailable: true
   });
 
   // Kategori listesi tanımı
-  const categories = ['All', 'Starter', 'Main Dish', 'Dessert', 'Beverage'];
+  const categories = ['All', 'Starters', 'Main Course', 'Salads', 'Desserts', 'Beverages'];
 
   // Menü ürünlerini arama sorgusu ve kategoriye göre süz
   const filteredItems = menuItems.filter(item => {
@@ -58,7 +62,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
     setFormData({
       name: '',
       price: 0,
-      category: 'Main Dish',
+      category: 'Main Course',
       description: '',
       isAvailable: true
     });
@@ -97,10 +101,43 @@ export default function MenuManagement({ menuItems, currentUser }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingItem) {
-      dispatch(updateMenuItem({ id: editingItem.id, ...formData }));
+      dispatch(updateMenuItem({ id: editingItem.id, ...formData })).then((actionResult) => {
+        if (updateMenuItem.fulfilled.match(actionResult)) {
+          // Eğer menü öğesinin adı değiştiyse, envanterdeki eşleşen öğelerin adını da günceller
+          if (editingItem.name !== formData.name) {
+            const matchingInventoryItems = inventoryItems.filter(
+              inv => inv.name.toLowerCase() === editingItem.name.toLowerCase()
+            );
+            matchingInventoryItems.forEach(invItem => {
+              dispatch(updateInventoryItem({
+                ...invItem,
+                name: formData.name
+              }));
+            });
+          }
+        }
+      });
       showToast('Menu item updated successfully!', 'success');
     } else {
-      dispatch(addMenuItem(formData));
+      dispatch(addMenuItem(formData)).then((actionResult) => {
+        if (addMenuItem.fulfilled.match(actionResult)) {
+          // Eğer envanterde bu isimde bir kayıt zaten varsa mükerrer ekleme yapma
+          const exists = inventoryItems.some(
+            inv => inv.name.toLowerCase() === formData.name.toLowerCase()
+          );
+          if (!exists) {
+            dispatch(addInventoryItem({
+              name: formData.name,
+              quantity: 0,
+              unit: 'pcs',
+              minLimit: 10,
+              branchName: 'All Branches',
+              branchId: 'All',
+              supplier: 'Menu Integration'
+            }));
+          }
+        }
+      });
       showToast('Menu item created successfully!', 'success');
     }
     handleCloseModal();
@@ -115,7 +152,19 @@ export default function MenuManagement({ menuItems, currentUser }) {
       cancelText: language === 'tr' ? 'İptal' : 'Cancel'
     });
     if (isConfirmed) {
-      dispatch(deleteMenuItem(id));
+      const itemToDelete = menuItems.find(item => item.id === id);
+      
+      dispatch(deleteMenuItem(id)).then((actionResult) => {
+        if (deleteMenuItem.fulfilled.match(actionResult) && itemToDelete) {
+          // İsme göre eşleşen tüm envanter/stok kayıtlarını bulup siler
+          const matchingInventoryItems = inventoryItems.filter(
+            inv => inv.name.toLowerCase() === itemToDelete.name.toLowerCase()
+          );
+          matchingInventoryItems.forEach(invItem => {
+            dispatch(deleteInventoryItem(invItem.id));
+          });
+        }
+      });
       showToast('Menu item deleted successfully!', 'success');
     }
   };
@@ -158,10 +207,12 @@ export default function MenuManagement({ menuItems, currentUser }) {
             >
               {categories.map(cat => {
                 const catTranslation = cat === 'All' ? (language === 'tr' ? 'Tüm Kategoriler' : 'All Categories') :
-                                       cat === 'Starter' ? (language === 'tr' ? 'Başlangıç' : 'Starter') :
-                                       cat === 'Main Dish' ? (language === 'tr' ? 'Ana Yemek' : 'Main Dish') :
-                                       cat === 'Dessert' ? (language === 'tr' ? 'Tatlı' : 'Dessert') :
-                                       (language === 'tr' ? 'İçecek' : 'Beverage');
+                                       cat === 'Starters' ? (language === 'tr' ? 'Başlangıç' : 'Starters') :
+                                       cat === 'Main Course' ? (language === 'tr' ? 'Ana Yemek' : 'Main Course') :
+                                       cat === 'Salads' ? (language === 'tr' ? 'Salata' : 'Salads') :
+                                       cat === 'Desserts' ? (language === 'tr' ? 'Tatlı' : 'Desserts') :
+                                       cat === 'Beverages' ? (language === 'tr' ? 'İçecek' : 'Beverages') :
+                                       cat;
 
                 return (
                   <option key={cat} value={cat}>{catTranslation}</option>
@@ -188,10 +239,12 @@ export default function MenuManagement({ menuItems, currentUser }) {
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredItems.map(item => {
-            const catTranslation = item.category === 'Starter' ? (language === 'tr' ? 'BAŞLANGIÇ' : 'Starter') :
-                                   item.category === 'Main Dish' ? (language === 'tr' ? 'ANA YEMEK' : 'Main Dish') :
-                                   item.category === 'Dessert' ? (language === 'tr' ? 'TATLI' : 'Dessert') :
-                                   (language === 'tr' ? 'İÇECEK' : 'Beverage');
+            const catTranslation = item.category === 'Starters' ? (language === 'tr' ? 'BAŞLANGIÇ' : 'STARTERS') :
+                                   item.category === 'Main Course' ? (language === 'tr' ? 'ANA YEMEK' : 'MAIN COURSE') :
+                                   item.category === 'Salads' ? (language === 'tr' ? 'SALATA' : 'SALADS') :
+                                   item.category === 'Desserts' ? (language === 'tr' ? 'TATLI' : 'DESSERTS') :
+                                   item.category === 'Beverages' ? (language === 'tr' ? 'İÇECEK' : 'BEVERAGES') :
+                                   item.category;
 
             return (
               <div 
@@ -264,11 +317,15 @@ export default function MenuManagement({ menuItems, currentUser }) {
 
       {/* Menü Ekleme/Düzenleme Form Modali */}
       {isModalOpen && (
+        // Arka planı karartılmış modal katmanı
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          {/* Modal kutusu - zoom animasyonu ile açılır */}
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-zoom-in">
+            {/* Modal Başlığı */}
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-blue-400" />
+                {/* Güncelleme veya ekleme durumuna göre dil çevirisini yerleştir */}
                 <h3 className="font-bold">{editingItem ? t('edit_culinary_listing') : t('add_dish')}</h3>
               </div>
               <button 
@@ -280,8 +337,9 @@ export default function MenuManagement({ menuItems, currentUser }) {
               </button>
             </div>
 
+            {/* Menü Elemanı Veri Giriş Formu */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Ürün Adı */}
+              {/* Ürün Adı Giriş Alanı */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('culinary_name_required')}</label>
                 <input
@@ -295,8 +353,9 @@ export default function MenuManagement({ menuItems, currentUser }) {
                 />
               </div>
 
-              {/* Kategori & Fiyat */}
+              {/* Kategori ve Fiyat Alanı */}
               <div className="grid grid-cols-2 gap-4">
+                {/* Menü Kategorisi Seçicisi */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('category_required')}</label>
                   <select
@@ -305,13 +364,15 @@ export default function MenuManagement({ menuItems, currentUser }) {
                     onChange={handleInputChange}
                     className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-hidden cursor-pointer"
                   >
-                    <option value="Starter">{language === 'tr' ? 'Başlangıç' : 'Starter'}</option>
-                    <option value="Main Dish">{language === 'tr' ? 'Ana Yemek' : 'Main Dish'}</option>
-                    <option value="Dessert">{language === 'tr' ? 'Tatlı' : 'Dessert'}</option>
-                    <option value="Beverage">{language === 'tr' ? 'İçecek' : 'Beverage'}</option>
+                    <option value="Starters">{language === 'tr' ? 'Başlangıç' : 'Starters'}</option>
+                    <option value="Main Course">{language === 'tr' ? 'Ana Yemek' : 'Main Course'}</option>
+                    <option value="Salads">{language === 'tr' ? 'Salata' : 'Salads'}</option>
+                    <option value="Desserts">{language === 'tr' ? 'Tatlı' : 'Desserts'}</option>
+                    <option value="Beverages">{language === 'tr' ? 'İçecek' : 'Beverages'}</option>
                   </select>
                 </div>
 
+                {/* Satış Fiyatı Giriş Alanı */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('price_required')}</label>
                   <input
@@ -326,7 +387,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
                 </div>
               </div>
 
-              {/* Açıklama */}
+              {/* Ürün Açıklaması Giriş Alanı */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('description_required')}</label>
                 <textarea
@@ -340,7 +401,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
                 />
               </div>
 
-              {/* Stok Durum Kutusu */}
+              {/* Satışa Uygunluk / Stok Durum Kutusu */}
               <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
@@ -355,7 +416,7 @@ export default function MenuManagement({ menuItems, currentUser }) {
                 </label>
               </div>
 
-              {/* Form Alt Butonları */}
+              {/* Form Gönderme / İptal Kontrolleri */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"

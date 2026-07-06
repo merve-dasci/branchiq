@@ -1,18 +1,18 @@
-// React ve durum kancasını (useState) içe aktar
-import React, { useState } from 'react';
+// React ve durum kancalarını (useState, useEffect) içe aktar
+import React, { useState, useEffect } from 'react';
 // Çalışan kadrosu ekranı simgelerini Lucide React paketinden yükle
-import { 
-  Users, 
-  Plus, 
-  Search, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  SlidersHorizontal, 
-  X, 
-  Trash2, 
-  Edit2, 
-  Briefcase 
+import {
+  Users,
+  Plus,
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  SlidersHorizontal,
+  X,
+  Trash2,
+  Edit2,
+  Briefcase
 } from 'lucide-react';
 // Redux çalışan ekleme, güncelleme ve silme thunk eylemlerini import et
 import { useDispatch } from 'react-redux';
@@ -33,8 +33,13 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
   const [roleFilter, setRoleFilter] = useState('All');
   const [selectedBranchId, setSelectedBranchId] = useState('All');
 
+  // Bölge değiştiğinde şube filtresini sıfırla
+  useEffect(() => {
+    setSelectedBranchId('All');
+  }, [selectedRegion]);
+
   // Modal Açık/Kapalı ve güncellenen üye durumları
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); //yeni personel ekleme kısmı
   const [editingMember, setEditingMember] = useState(null);
 
   // Yeni çalışan formu veri yapısı
@@ -48,22 +53,26 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
   });
 
   // Şubeleri bölge ağı sınırlarına göre filtrele
-  const regionalBranches = selectedRegion === 'All' 
-    ? branches 
+  const regionalBranches = selectedRegion === 'All'
+    ? branches
     : branches.filter(b => b.region === selectedRegion);
 
   const regionalBranchIds = regionalBranches.map(b => b.id);
 
   // Çalışanları arama kelimesine, şubeye ve unvana göre süz
   const filteredStaff = staff.filter(member => {
-    // Bölgesel kısıt
-    const matchesRegion = selectedRegion === 'All' || regionalBranchIds.includes(member.branchId);
-    
+    // Bölgesel kısıt (Bölgesi 'All' olan Genel Merkez yöneticileri her zaman dahil edilir)
+    const matchesRegion = selectedRegion === 'All' || 
+                          member.branchId === 'All' || 
+                          regionalBranchIds.includes(member.branchId);
+
     // Şube filtresi
     const matchesBranch = selectedBranchId === 'All' || member.branchId === selectedBranchId;
-    
-    // Görev / Unvan filtresi
-    const matchesRole = roleFilter === 'All' || member.role === roleFilter;
+
+    // Görev / Unvan filtresi (Chef/Head Chef uyumluluğu ile birlikte)
+    const matchesRole = roleFilter === 'All' || 
+                        member.role === roleFilter || 
+                        (roleFilter === 'Chef' && member.role === 'Head Chef');
 
     // Arama kelimesi eşleşmesi (Ad, e-posta veya görev)
     const text = `${member.name} ${member.email} ${member.role}`.toLowerCase();
@@ -178,11 +187,11 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
             >
               {roles.map(role => {
                 const roleTranslation = role === 'All' ? (language === 'tr' ? 'Tüm Unvanlar' : 'All Roles') :
-                                        role === 'Branch Manager' ? (language === 'tr' ? 'Şube Müdürü' : 'Branch Manager') :
-                                        role === 'Chef' ? (language === 'tr' ? 'Şef / Aşçı' : 'Chef') :
-                                        role === 'Waiter' ? (language === 'tr' ? 'Garson' : 'Waiter') :
-                                        role === 'Cashier' ? (language === 'tr' ? 'Kasiyer' : 'Cashier') :
-                                        (language === 'tr' ? 'Karşılama / Hostes' : 'Host');
+                  role === 'Branch Manager' ? (language === 'tr' ? 'Şube Müdürü' : 'Branch Manager') :
+                    role === 'Chef' ? (language === 'tr' ? 'Şef / Aşçı' : 'Chef') :
+                      role === 'Waiter' ? (language === 'tr' ? 'Garson' : 'Waiter') :
+                        role === 'Cashier' ? (language === 'tr' ? 'Kasiyer' : 'Cashier') :
+                          (language === 'tr' ? 'Karşılama / Hostes' : 'Host');
 
                 return (
                   <option key={role} value={role}>{roleTranslation}</option>
@@ -227,14 +236,18 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
           {filteredStaff.map(member => {
             const statusTranslation = member.status === 'Active' ? (language === 'tr' ? 'Aktif Görevde' : 'Active') : (language === 'tr' ? 'İzinli / Pasif' : 'Inactive');
             const roleTranslation = member.role === 'Branch Manager' ? (language === 'tr' ? 'Şube Müdürü' : 'Branch Manager') :
-                                    member.role === 'Chef' ? (language === 'tr' ? 'Şef / Aşçı' : 'Chef') :
-                                    member.role === 'Waiter' ? (language === 'tr' ? 'Garson' : 'Waiter') :
-                                    member.role === 'Cashier' ? (language === 'tr' ? 'Kasiyer' : 'Cashier') :
-                                    (language === 'tr' ? 'Karşılama / Hostes' : 'Host');
+              member.role === 'Chef' ? (language === 'tr' ? 'Şef / Aşçı' : 'Chef') :
+                member.role === 'Head Chef' ? (language === 'tr' ? 'Aşçıbaşı / Şef' : 'Head Chef') :
+                  member.role === 'Waiter' ? (language === 'tr' ? 'Garson' : 'Waiter') :
+                    member.role === 'Cashier' ? (language === 'tr' ? 'Kasiyer' : 'Cashier') :
+                      member.role === 'Host' ? (language === 'tr' ? 'Karşılama / Hostes' : 'Host') :
+                        member.role === 'Super Admin' || member.role === 'superAdmin' ? (language === 'tr' ? 'Süper Admin' : 'Super Admin') :
+                          member.role === 'Regional Manager' ? (language === 'tr' ? 'Bölge Müdürü' : 'Regional Manager') :
+                            member.role;
 
             return (
-              <div 
-                key={member.id} 
+              <div
+                key={member.id}
                 id={`staff-card-${member.id}`}
                 className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden hover:shadow-md transition-all duration-200 flex flex-col"
               >
@@ -260,9 +273,8 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400 font-medium">{t('roster_status')}:</span>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                        member.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-150 text-slate-500'
-                      }`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${member.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-150 text-slate-500'
+                        }`}>
                         {statusTranslation}
                       </span>
                     </div>
@@ -318,23 +330,29 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
 
       {/* Çalışan Onboard Ekleme/Düzenleme Form Modali */}
       {isModalOpen && (
+        // Arka planı karartılmış modal kapsayıcısı
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          {/* Modal kutusu - zoom animasyonu ile açılır */}
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-zoom-in">
+            {/* Modal Başlık Kısmı */}
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Users size={18} className="text-blue-400" />
+                {/* Düzenleme veya yeni ekleme durumuna göre başlık metnini ayarla */}
                 <h3 className="font-bold">{editingMember ? t('update_staff_member') : t('onboard_employee')}</h3>
               </div>
-              <button 
+              <button
                 id="close-staff-modal-btn"
-                onClick={handleCloseModal} 
+                onClick={handleCloseModal}
                 className="text-slate-400 hover:text-white transition-all cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
+            {/* Çalışan Bilgileri Giriş Formu */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* İsim Giriş Alanı */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('full_legal_name')}</label>
                 <input
@@ -348,6 +366,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                 />
               </div>
 
+              {/* E-posta Giriş Alanı */}
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('roster_email')}</label>
                 <input
@@ -361,7 +380,9 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                 />
               </div>
 
+              {/* Şube ve Rol Seçicileri */}
               <div className="grid grid-cols-2 gap-4">
+                {/* Şube Seçimi (Bölgeye göre filtrelenmiş şubeleri listeler) */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('store_node_assignment')}</label>
                   <select
@@ -376,6 +397,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                   </select>
                 </div>
 
+                {/* Rol / Pozisyon Seçimi */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('operational_role')}</label>
                   <select
@@ -393,7 +415,9 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                 </div>
               </div>
 
+              {/* Telefon ve Aktiflik Durumu Seçicileri */}
               <div className="grid grid-cols-2 gap-4">
+                {/* Telefon Numarası Giriş Alanı */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('contact_phone_required')}</label>
                   <input
@@ -407,6 +431,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                   />
                 </div>
 
+                {/* Çalışan Görev Durumu (Aktif / İzinli / Pasif) */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('roster_status_required')}</label>
                   <select
@@ -421,6 +446,7 @@ export default function Employees({ staff, branches, selectedRegion, currentUser
                 </div>
               </div>
 
+              {/* Form Alt Buton Alanları (Vazgeç ve Kaydet) */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                 <button
                   type="button"
