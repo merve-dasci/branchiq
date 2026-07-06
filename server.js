@@ -10,7 +10,7 @@ import { createServer as createViteServer } from "vite";
 // Express uygulamasını oluştur
 const app = express();
 // Sunucunun çalışacağı port numarasını belirle
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 // Veritabanı olarak kullanacağımız db.json dosyasının mutlak yolunu tanımla
 const DB_FILE = path.join(process.cwd(), "db.json");
 
@@ -29,10 +29,10 @@ app.use("/api", (req, res, next) => {
         originalEnd.apply(this, args);
         resolve();
       };
-      
+
       // Bağlantı kopması veya hata durumlarını da ele al
       res.on("close", resolve);
-      
+
       next();
     });
   });
@@ -62,12 +62,12 @@ async function readDB() {
   } catch (error) {
     if (error.code === 'ENOENT') {
       // db.json dosya bulunamazsa boş şablon döndür (ilk oluşturma için)
-      return { 
-        users: [], 
-        branches: [], 
-        menuItems: [], 
-        orders: [], 
-        staff: [], 
+      return {
+        users: [],
+        branches: [],
+        menuItems: [],
+        orders: [],
+        staff: [],
         announcements: [],
         inventory: [],
         reservations: [],
@@ -98,7 +98,7 @@ app.post("/api/login", async (req, res) => {
   const db = await readDB();
   // Veritabanında eşleşen e-posta ve şifreye sahip kullanıcıyı ara
   const user = db.users.find((u) => u.email === email && String(u.password) === String(password));
-  
+
   if (user) {
     // Kullanıcı bulunduysa başarılı yanıtı ve kullanıcı bilgilerini dön
     res.json({ success: true, user });
